@@ -712,6 +712,9 @@
     <!-- Ethers.js -->
     <script src="https://cdn.jsdelivr.net/npm/ethers@5.7.2/dist/ethers.umd.min.js"></script>
 
+    <!-- WalletConnect for mobile support -->
+    <script src="https://cdn.jsdelivr.net/npm/@walletconnect/web3-provider@1.8.0/dist/umd/index.min.js"></script>
+
     <script>
         // Contract Addresses on Base Mainnet
         const PONY_TOKEN_ADDRESS = "0x6ab297799335E7b0f60d9e05439Df156cf694Ba7";
@@ -736,6 +739,7 @@
         // Global state
         let provider, signer, ponyToken, pixelPony, userAddress;
         let selectedHorse = null;
+        let walletConnectProvider = null; // Store WalletConnect provider if used
 
         // Initialize
         document.addEventListener('DOMContentLoaded', () => {
@@ -796,22 +800,50 @@
             }
         }
 
+        // Detect if user is on mobile
+        function isMobile() {
+            return /Android|webOS|iPhone|iPad|iPod|BlackBerry|IEMobile|Opera Mini/i.test(navigator.userAgent);
+        }
+
         // Connect Wallet
         async function connectWallet() {
             try {
-                if (typeof window.ethereum === 'undefined') {
-                    showStatus('Please install MetaMask or another Web3 wallet!', 'error');
-                    return;
-                }
-
                 showStatus('Connecting wallet...', 'info');
                 console.log('Connecting to wallet...');
 
-                provider = new ethers.providers.Web3Provider(window.ethereum);
-                console.log('Provider created');
+                // Check if mobile and no ethereum provider
+                if (isMobile() && typeof window.ethereum === 'undefined') {
+                    console.log('Mobile device detected, using WalletConnect...');
 
-                await provider.send("eth_requestAccounts", []);
-                console.log('Accounts requested');
+                    // Initialize WalletConnect provider
+                    walletConnectProvider = new WalletConnectProvider.default({
+                        rpc: {
+                            8453: "https://mainnet.base.org",
+                        },
+                        chainId: BASE_MAINNET_CHAIN_ID,
+                        qrcode: true,
+                    });
+
+                    // Enable session (triggers deep link or QR Code modal)
+                    await walletConnectProvider.enable();
+                    console.log('WalletConnect enabled');
+
+                    // Create ethers provider from WalletConnect
+                    provider = new ethers.providers.Web3Provider(walletConnectProvider);
+                    console.log('Provider created via WalletConnect');
+                } else {
+                    // Desktop or browser with injected provider
+                    if (typeof window.ethereum === 'undefined') {
+                        showStatus('Please install MetaMask or another Web3 wallet!', 'error');
+                        return;
+                    }
+
+                    provider = new ethers.providers.Web3Provider(window.ethereum);
+                    console.log('Provider created');
+
+                    await provider.send("eth_requestAccounts", []);
+                    console.log('Accounts requested');
+                }
 
                 signer = provider.getSigner();
                 userAddress = await signer.getAddress();
@@ -823,23 +855,32 @@
 
                 if (network.chainId !== BASE_MAINNET_CHAIN_ID) {
                     console.log('Wrong network! Requesting switch...');
-                    showStatus('Switching to Base Mainnet...', 'info');
-                    try {
-                        await window.ethereum.request({
-                            method: 'wallet_switchEthereumChain',
-                            params: [{ chainId: '0x2105' }], // 8453 in hex
-                        });
-                        console.log('Network switched successfully');
-                        // Wait a moment for the network to switch
-                        await new Promise(resolve => setTimeout(resolve, 1000));
-                        // Recreate provider after network switch
-                        provider = new ethers.providers.Web3Provider(window.ethereum);
-                        signer = provider.getSigner();
-                    } catch (switchError) {
-                        console.error('Network switch error:', switchError);
-                        if (switchError.code === 4902) {
-                            showStatus('Please add Base Mainnet to your wallet!', 'error');
+                    showStatus('Please switch to Base Mainnet in your wallet!', 'error');
+
+                    // Only try to switch network if using window.ethereum
+                    if (window.ethereum) {
+                        showStatus('Switching to Base Mainnet...', 'info');
+                        try {
+                            await window.ethereum.request({
+                                method: 'wallet_switchEthereumChain',
+                                params: [{ chainId: '0x2105' }], // 8453 in hex
+                            });
+                            console.log('Network switched successfully');
+                            // Wait a moment for the network to switch
+                            await new Promise(resolve => setTimeout(resolve, 1000));
+                            // Recreate provider after network switch
+                            provider = new ethers.providers.Web3Provider(window.ethereum);
+                            signer = provider.getSigner();
+                        } catch (switchError) {
+                            console.error('Network switch error:', switchError);
+                            if (switchError.code === 4902) {
+                                showStatus('Please add Base Mainnet to your wallet!', 'error');
+                            }
+                            return;
                         }
+                    } else {
+                        // WalletConnect - user needs to switch manually
+                        showStatus('Please switch to Base Mainnet in your wallet app!', 'error');
                         return;
                     }
                 }
