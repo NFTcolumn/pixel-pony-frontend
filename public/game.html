@@ -1207,13 +1207,13 @@
 
                 const laneNumber = document.createElement('div');
                 laneNumber.className = 'lane-number';
-                laneNumber.textContent = `#${i}`;
+                laneNumber.textContent = `#${i + 1}`;
 
                 const horse = document.createElement('img');
                 horse.src = `sprites/${raceSprites[i]}.png`;
                 horse.className = 'horse-racer';
                 horse.id = `horse-${i}`;
-                horse.alt = `Horse ${i}`;
+                horse.alt = `Pony #${i + 1}`;
                 horse.style.left = '35px'; // Start behind start line
 
                 if (i === playerHorseId) {
