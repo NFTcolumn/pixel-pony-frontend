@@ -11,13 +11,26 @@ const mimeTypes = {
     '.json': 'application/json',
     '.png': 'image/png',
     '.jpg': 'image/jpg',
+    '.jpeg': 'image/jpeg',
     '.ico': 'image/x-icon',
+    '.svg': 'image/svg+xml',
+    '.webmanifest': 'application/manifest+json',
 };
 
 const server = http.createServer((req, res) => {
     console.log('Request:', req.url);
 
-    let filePath = './public' + (req.url === '/' ? '/index.html' : req.url);
+    let filePath = './public' + req.url;
+
+    // Handle root
+    if (req.url === '/') {
+        filePath = './public/index.html';
+    }
+    // Add .html extension if no extension present
+    else if (!path.extname(filePath)) {
+        filePath += '.html';
+    }
+
     const extname = String(path.extname(filePath)).toLowerCase();
     const contentType = mimeTypes[extname] || 'application/octet-stream';
 
