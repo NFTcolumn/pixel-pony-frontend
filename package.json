@@ -1,0 +1,21 @@
+{
+  "name": "pixel-pony-racing-frontend",
+  "version": "1.0.0",
+  "description": "Pixel Pony Racing - Frontend for Base Mainnet",
+  "main": "start-frontend.js",
+  "scripts": {
+    "start": "node start-frontend.js"
+  },
+  "keywords": [
+    "blockchain",
+    "racing",
+    "pixel-pony",
+    "base-mainnet",
+    "web3"
+  ],
+  "author": "",
+  "license": "MIT",
+  "engines": {
+    "node": ">=14.0.0"
+  }
+}

@@ -1,0 +1,198 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no">
+    <title>Pixel Ponies DEMO: 16 Pixelated Ponies Racing On-Chain For No Reason $PONY $BASE</title>
+    
+    <!-- App Manifest and Icons -->
+    <link rel="stylesheet" href="styles.css">
+    <link rel="icon" type="image/x-icon" href="favicon.ico">
+    
+    <!-- iOS App Icons -->
+    <link rel="apple-touch-icon" sizes="180x180" href="logo.png">
+    <link rel="apple-touch-icon" sizes="152x152" href="logo.png">
+    <link rel="apple-touch-icon" sizes="144x144" href="logo.png">
+    <link rel="apple-touch-icon" sizes="120x120" href="logo.png">
+    <link rel="apple-touch-icon" sizes="114x114" href="logo.png">
+    <link rel="apple-touch-icon" sizes="76x76" href="logo.png">
+    <link rel="apple-touch-icon" sizes="72x72" href="logo.png">
+    <link rel="apple-touch-icon" sizes="60x60" href="logo.png">
+    <link rel="apple-touch-icon" sizes="57x57" href="logo.png">
+    
+    <!-- iOS App Configuration -->
+    <meta name="apple-mobile-web-app-capable" content="yes">
+    <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+    <meta name="apple-mobile-web-app-title" content="Pixel Ponies">
+    
+    <!-- Android App Configuration -->
+    <meta name="mobile-web-app-capable" content="yes">
+    <meta name="theme-color" content="#0f380f">
+    <meta name="msapplication-navbutton-color" content="#0f380f">
+    <meta name="msapplication-TileColor" content="#0f380f">
+    
+    <!-- SEO and Social -->
+    <meta name="description" content="16 Pixelated Ponies Racing On-Chain For No Reason - Retro NES-style horse racing game on Base blockchain with $PONY tokens">
+    <meta name="keywords" content="pixel ponies, blockchain game, horse racing, base, pony token, retro gaming, nft">
+    
+    <!-- Open Graph / Social Media -->
+    <meta property="og:type" content="website">
+    <meta property="og:title" content="Pixel Ponies: 16 Pixelated Ponies Racing On-Chain For No Reason">
+    <meta property="og:description" content="Retro NES-style horse racing game on Base blockchain with $PONY tokens">
+    <meta property="og:image" content="logo.png">
+    <meta property="og:url" content="https://pixelponies.game">
+    
+    <!-- Twitter Card -->
+    <meta name="twitter:card" content="summary_large_image">
+    <meta name="twitter:title" content="Pixel Ponies: 16 Pixelated Ponies Racing On-Chain For No Reason">
+    <meta name="twitter:description" content="Retro NES-style horse racing game on Base blockchain with $PONY tokens">
+    <meta name="twitter:image" content="logo.png">
+</head>
+<body>
+    <div class="container">
+        <div class="wallet-info-top">
+            <button id="connectWallet">Connect Wallet</button>
+            <div id="walletAddress" class="hidden"></div>
+            <div id="ponyBalance" class="hidden"></div>
+        </div>
+        <header>
+            <img src="logo.png" alt="Pixel Ponies Logo" style="height: 48px; margin-bottom: 8px;">
+            <p>16 PIXELATED PONIES RACING ON-CHAIN FOR NO REASON</p>
+            <p style="background: #ff6b6b; color: white; padding: 8px; margin-top: 8px; border-radius: 4px; font-size: 10px;">
+                DEMO MODE - <a href="index.html" style="color: #fff; text-decoration: underline;">Play with Real Tokens</a>
+            </p>
+        </header>
+
+        <main>
+            <!-- Race Timer Section -->
+            <section class="race-timer">
+                <h2>Next Race In:</h2>
+                <div id="countdown" class="countdown">--:--</div>
+                <div id="raceStatus" class="race-status">Waiting for next race...</div>
+            </section>
+
+            <!-- Current Race Info -->
+            <section class="race-info">
+                <h2>Current Race #<span id="currentRaceId">--</span></h2>
+                <div id="raceTrack" class="race-track">
+                    <div class="distance-markers">
+                        <div class="distance-marker">0px</div>
+                        <div class="distance-marker">100px</div>
+                        <div class="distance-marker">200px</div>
+                        <div class="distance-marker">300px</div>
+                        <div class="distance-marker">400px</div>
+                        <div class="distance-marker">FINISH</div>
+                    </div>
+                    <div class="horses-container" id="horsesContainer">
+                        <!-- Horses will be dynamically generated -->
+                    </div>
+                    <div class="race-state-overlay" id="raceStateOverlay">
+                        <div class="race-state-content">
+                            <div id="raceStateText">PREPARING RACE...</div>
+                            <div id="raceStateCountdown">--:--</div>
+                        </div>
+                    </div>
+                    <div class="start-line"></div>
+                    <div class="finish-line"></div>
+                </div>
+            </section>
+
+            <!-- Betting Section -->
+            <section class="betting-section">
+                <h2>Place Your Bets</h2>
+                <div class="bet-controls">
+                    <div class="bet-actions">
+                        <div class="total-bet">Total: <span id="totalBetAmount">0.00</span> PONY</div>
+                        <button id="placeBetBtn" disabled>Place All Bets</button>
+                        <button id="clearBetsBtn">Clear All</button>
+                    </div>
+                </div>
+                <div class="horses-grid" id="horsesGrid">
+                    <!-- Betting buttons will be generated here -->
+                </div>
+            </section>
+
+            <!-- Jackpot Section -->
+            <section class="jackpot-section">
+                <h2>🎰 Jackpot</h2>
+                <div class="jackpot-info">
+                    <div class="jackpot-pool">
+                        <h3>Current Jackpot: <span id="jackpotAmount">0</span> PONY</h3>
+                    </div>
+                    <div class="winning-numbers">
+                        <h4>Winning Numbers:</h4>
+                        <div id="jackpotNumbers" class="numbers-display">-- -- -- --</div>
+                    </div>
+                </div>
+                <div class="lottery-tickets">
+                    <h4>Your Lottery Tickets</h4>
+                    <div id="userTickets" class="tickets-list">
+                        <p>No tickets yet. Place a bet to get tickets!</p>
+                    </div>
+                    <button id="checkJackpotBtn" disabled>Check Jackpot</button>
+                </div>
+            </section>
+
+            <!-- Your Bets Section -->
+            <section class="user-bets">
+                <h2>Your Bets</h2>
+                <div id="userBetsList" class="bets-list">
+                    <p>No bets placed yet.</p>
+                </div>
+                <button id="claimWinningsBtn" disabled>Claim Winnings</button>
+            </section>
+
+            <!-- Race Results -->
+            <section class="race-results">
+                <h2>Recent Race Results</h2>
+                <div id="recentResults" class="results-list">
+                    <p>No recent results.</p>
+                </div>
+            </section>
+        </main>
+        
+        <!-- Footer -->
+        <footer style="background: #ffffff; border: 2px solid #cccccc; margin-top: 24px; padding: 16px; text-align: center; border-radius: 8px; box-shadow: 0 4px 8px rgba(0,0,0,0.1);">
+            <div style="display: flex; justify-content: center; gap: 16px; flex-wrap: wrap; margin-bottom: 12px;">
+                <a href="buy.html" style="color: #ff6b6b; text-decoration: none; font-size: 8px;">💰 BUY $PONY</a>
+                <a href="whitepaper.html" style="color: #0066cc; text-decoration: none; font-size: 8px;">📄 WHITEPAPER</a>
+                <a href="terms.html" style="color: #0066cc; text-decoration: none; font-size: 8px;">⚖️ TERMS</a>
+                <a href="privacy.html" style="color: #0066cc; text-decoration: none; font-size: 8px;">🔒 PRIVACY</a>
+            </div>
+            <p style="font-size: 6px; color: #666666; line-height: 1.6;">
+                Pixel Ponies © 2025 | 16 Pixelated Ponies Racing On-Chain For No Reason<br>
+                Built on Base Network | Not financial advice | Play responsibly
+            </p>
+        </footer>
+    </div>
+
+    <!-- Contract ABIs and Addresses -->
+    <script>
+        // Contract addresses - Ethereum Sepolia
+        const CONTRACT_ADDRESSES = {
+            PONY_TOKEN: "0xde2f957BF8B9459e9E998b98789Af02920404ad8",
+            PONY_RACING: "0x6ab297799335E7b0f60d9e05439Df156cf694Ba7"
+        };
+
+        // Contract ABIs (simplified - include only necessary functions)
+        const PONY_TOKEN_ABI = [
+            "function balanceOf(address owner) view returns (uint256)",
+            "function approve(address spender, uint256 amount) returns (bool)",
+            "function allowance(address owner, address spender) view returns (uint256)"
+        ];
+
+        const PONY_RACING_ABI = [
+            "function placeBetAndRace(uint256 _horseId, uint256 _amount) payable returns (uint256 raceId, bool won, uint256 payout)",
+            "function totalRaces() view returns (uint256)",
+            "function jackpotPool() view returns (uint256)",
+            "function baseFeeAmount() view returns (uint256)",
+            "function totalTokensBurned() view returns (uint256)",
+            "event RaceExecuted(uint256 indexed raceId, address indexed player, uint256 horseId, uint256[3] winners, uint256 payout, bool won)"
+        ];
+    </script>
+    
+    <script src="error-handler.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/ethers@5.7.2/dist/ethers.umd.min.js"></script>
+    <script type="module" src="modules/main.js"></script>
+</body>
+</html>

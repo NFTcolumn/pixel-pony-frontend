@@ -1,0 +1,309 @@
+/* Racing Track and Timer Styles */
+
+.race-timer {
+    text-align: center;
+    color: #00ffff;
+}
+
+.countdown {
+    font-size: 24px;
+    color: #ffff00;
+    text-shadow: 2px 2px 4px rgba(0,0,0,0.8);
+    margin: 12px 0;
+    animation: pulse 1s ease-in-out infinite alternate;
+}
+
+@keyframes pulse {
+    from { opacity: 0.8; transform: scale(1); }
+    to { opacity: 1; transform: scale(1.05); }
+}
+
+.race-status {
+    font-size: 8px;
+    color: #ffffff;
+    text-shadow: 1px 1px 2px rgba(0,0,0,0.8);
+    margin-top: 8px;
+}
+
+.race-info {
+    position: relative;
+}
+
+.race-track {
+    background: #ffffff;
+    border: 2px solid #cccccc;
+    height: 500px;
+    position: relative;
+    overflow: hidden;
+    margin: 12px 0;
+    box-shadow: inset 0 2px 4px rgba(0,0,0,0.1);
+}
+
+.horses-container {
+    position: relative;
+    height: calc(100% - 20px);
+    top: 20px;
+    background: 
+        /* Lane dividers - 16 equal lanes */
+        linear-gradient(
+            0deg,
+            #ff6b6b 0%,
+            #ff6b6b 6.25%,
+            #ffa500 6.25%,
+            #ffa500 12.5%,
+            #ffd700 12.5%,
+            #ffd700 18.75%,
+            #98fb98 18.75%,
+            #98fb98 25%,
+            #87ceeb 25%,
+            #87ceeb 31.25%,
+            #9370db 31.25%,
+            #9370db 37.5%,
+            #ffb6c1 37.5%,
+            #ffb6c1 43.75%,
+            #dda0dd 43.75%,
+            #dda0dd 50%,
+            #f0e68c 50%,
+            #f0e68c 56.25%,
+            #20b2aa 56.25%,
+            #20b2aa 62.5%,
+            #ff69b4 62.5%,
+            #ff69b4 68.75%,
+            #00ced1 68.75%,
+            #00ced1 75%,
+            #ffa07a 75%,
+            #ffa07a 81.25%,
+            #98fb98 81.25%,
+            #98fb98 87.5%,
+            #dda0dd 87.5%,
+            #dda0dd 93.75%,
+            #87ceeb 93.75%,
+            #87ceeb 100%
+        );
+}
+
+/* Race State Overlay */
+.race-state-overlay {
+    position: absolute;
+    top: 50%;
+    left: 50%;
+    transform: translate(-50%, -50%);
+    z-index: 30;
+    background: rgba(0, 0, 0, 0.8);
+    color: white;
+    padding: 16px 24px;
+    text-align: center;
+    border: 2px solid #ffffff;
+    box-shadow: 0 4px 8px rgba(0, 0, 0, 0.3);
+    opacity: 0;
+    transition: opacity 0.3s ease;
+}
+
+.race-state-overlay.visible {
+    opacity: 1;
+}
+
+.race-state-content #raceStateText {
+    font-size: 12px;
+    color: #ffff00;
+    margin-bottom: 8px;
+    text-shadow: 1px 1px 2px rgba(0, 0, 0, 0.8);
+}
+
+.race-state-content #raceStateCountdown {
+    font-size: 16px;
+    color: #ff6b6b;
+    font-weight: bold;
+    text-shadow: 1px 1px 2px rgba(0, 0, 0, 0.8);
+}
+
+/* Distance labels */
+.distance-markers {
+    position: absolute;
+    top: 0;
+    left: 0;
+    right: 0;
+    height: 20px;
+    background: #ffffff;
+    border-bottom: 2px solid #cccccc;
+    z-index: 20;
+    font-size: 6px;
+    color: #333333;
+    box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+}
+
+.distance-marker {
+    position: absolute;
+    color: #333333;
+    font-size: 6px;
+    top: 6px;
+    font-weight: bold;
+    background: rgba(255,255,255,0.9);
+    padding: 2px 4px;
+}
+
+.distance-marker:nth-child(1) { left: 8px; }
+.distance-marker:nth-child(2) { left: 20%; }
+.distance-marker:nth-child(3) { left: 40%; }
+.distance-marker:nth-child(4) { left: 60%; }
+.distance-marker:nth-child(5) { left: 80%; }
+.distance-marker:nth-child(6) { right: 8px; color: #ff6b6b; }
+
+/* Start line */
+.start-line {
+    position: absolute;
+    left: 0;
+    top: 20px;
+    bottom: 0;
+    width: 33px;
+    z-index: 5;
+    background-image:
+        repeating-linear-gradient(45deg, #000 25%, transparent 25%, transparent 75%, #000 75%, #000),
+        repeating-linear-gradient(45deg, #000 25%, #fff 25%, #fff 75%, #000 75%, #000);
+    background-position: 0 0, 6px 6px;
+    background-size: 12px 12px;
+    border-right: 4px solid #000;
+}
+
+/* Finish line */
+.finish-line {
+    position: absolute;
+    right: 0;
+    top: 20px;
+    bottom: 0;
+    width: 10%;
+    z-index: 5;
+    background-image:
+        repeating-linear-gradient(45deg, #000 25%, transparent 25%, transparent 75%, #000 75%, #000),
+        repeating-linear-gradient(45deg, #000 25%, #fff 25%, #fff 75%, #000 75%, #000);
+    background-position: 0 0, 6px 6px;
+    background-size: 12px 12px;
+    border-left: 4px solid #000;
+}
+
+/* Horse sprites in race */
+.horse {
+    position: absolute;
+    z-index: 25;
+    transition: left 0.1s ease-out;
+    filter: drop-shadow(1px 1px 2px rgba(0,0,0,0.3));
+}
+
+.horse img {
+    width: 32px;
+    height: 32px;
+    image-rendering: pixelated;
+    animation: gallop 0.3s steps(2) infinite;
+}
+
+@keyframes gallop {
+    0% { transform: scaleX(-1) scaleY(1); }
+    50% { transform: scaleX(-1) scaleY(0.9) translateY(2px); }
+    100% { transform: scaleX(-1) scaleY(1); }
+}
+
+.horse.pre-race {
+    animation: none;
+    display: flex;
+    align-items: center;
+    height: 32px;
+    line-height: 32px;
+}
+
+.horse.pre-race img {
+    animation: none;
+}
+
+.horse.pre-race span {
+    vertical-align: middle;
+    line-height: 32px;
+}
+
+/* Winner styling */
+.horse.winner-1 { color: #ffd700; }
+.horse.winner-2 { color: #c0c0c0; }
+.horse.winner-3 { color: #cd7f32; }
+
+/* Winner Overlay */
+.winner-overlay {
+    position: fixed;
+    top: 0;
+    left: 0;
+    right: 0;
+    bottom: 0;
+    background: rgba(0, 0, 0, 0.9);
+    display: none;
+    align-items: center;
+    justify-content: center;
+    z-index: 1000;
+    animation: fadeIn 0.5s ease;
+}
+
+@keyframes fadeIn {
+    from { opacity: 0; }
+    to { opacity: 1; }
+}
+
+.winner-content {
+    background: linear-gradient(135deg, #2a2a2a, #4a4a4a);
+    border: 3px solid #ff6b6b;
+    padding: 32px;
+    text-align: center;
+    color: #00ffff;
+    box-shadow: 0 8px 16px rgba(0, 0, 0, 0.5);
+}
+
+.winner-content h2 {
+    color: #ffff00;
+    font-size: 16px;
+    margin-bottom: 24px;
+    text-shadow: 2px 2px 4px rgba(0, 0, 0, 0.8);
+}
+
+.winner-podium {
+    display: flex;
+    justify-content: center;
+    gap: 24px;
+    margin-top: 20px;
+}
+
+.winner-place {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 8px;
+    padding: 16px;
+    min-width: 100px;
+}
+
+.first-place {
+    background: linear-gradient(135deg, #ffd700, #ffed4e);
+    color: #000000;
+    transform: scale(1.1);
+}
+
+.second-place {
+    background: linear-gradient(135deg, #c0c0c0, #e8e8e8);
+    color: #000000;
+}
+
+.third-place {
+    background: linear-gradient(135deg, #cd7f32, #daa544);
+    color: #000000;
+}
+
+.medal {
+    font-size: 24px;
+    text-shadow: 2px 2px 4px rgba(0, 0, 0, 0.5);
+}
+
+.winner-name {
+    font-size: 8px;
+    font-weight: bold;
+    margin-top: 4px;
+}
+
+.winner-position {
+    font-size: 6px;
+    opacity: 0.8;
+}

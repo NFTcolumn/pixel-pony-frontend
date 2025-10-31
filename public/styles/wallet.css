@@ -1,0 +1,147 @@
+/* Wallet Component Styles */
+
+.wallet-info {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 8px;
+    margin-top: 12px;
+}
+
+#connectWallet {
+    font-size: 10px;
+    padding: 10px 16px;
+    background: #ff6b6b;
+    color: #ffffff;
+    border: 2px solid #d32f2f;
+    border-radius: 6px;
+    transition: all 0.2s ease;
+}
+
+#connectWallet:hover {
+    background: #f55555;
+    transform: translateY(-1px);
+    box-shadow: 0 2px 4px rgba(0,0,0,0.2);
+}
+
+#connectWallet:disabled {
+    background: #9bbc0f;
+    color: #0f380f;
+    border-color: #306230;
+}
+
+#disconnectWallet {
+    font-size: 10px;
+    padding: 10px 16px;
+    background: #9bbc0f;
+    color: #0f380f;
+    border: 2px solid #306230;
+    border-radius: 6px;
+    transition: all 0.2s ease;
+    font-weight: bold;
+    box-shadow: 0 2px 0 #306230;
+}
+
+#disconnectWallet:hover {
+    background: #8ba60e;
+    transform: translateY(-1px);
+    box-shadow: 0 3px 4px rgba(0,0,0,0.2);
+}
+
+#disconnectWallet:active {
+    transform: translateY(1px);
+    box-shadow: 0 1px 0 #306230;
+}
+
+#walletAddress {
+    font-size: 7px;
+    color: #0f380f;
+    background: #9bbc0f;
+    border: 2px solid #306230;
+    border-radius: 4px;
+    padding: 6px 10px;
+    font-weight: bold;
+    box-shadow: 0 2px 4px rgba(0,0,0,0.15);
+    animation: slideIn 0.3s ease-out;
+}
+
+@keyframes slideIn {
+    from {
+        opacity: 0;
+        transform: translateY(-10px);
+    }
+    to {
+        opacity: 1;
+        transform: translateY(0);
+    }
+}
+
+#ponyBalance {
+    font-size: 8px;
+    color: #0066cc;
+    font-weight: bold;
+}
+
+.wallet-install-btn {
+    margin: 4px;
+    font-size: 8px;
+    padding: 6px 12px;
+}
+
+.hidden {
+    display: none !important;
+}
+
+/* No PONY Modal */
+.no-pony-modal {
+    position: fixed;
+    top: 0;
+    left: 0;
+    right: 0;
+    bottom: 0;
+    background: rgba(0, 0, 0, 0.8);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    z-index: 1000;
+    padding: 16px;
+}
+
+.no-pony-content {
+    background: #ffffff;
+    border: 3px solid #ff6b6b;
+    border-radius: 8px;
+    padding: 24px;
+    max-width: 400px;
+    text-align: center;
+    box-shadow: 0 8px 16px rgba(0, 0, 0, 0.3);
+}
+
+.no-pony-content h3 {
+    color: #ff6b6b;
+    margin-bottom: 12px;
+    font-size: 12px;
+}
+
+.no-pony-content p {
+    margin-bottom: 12px;
+    line-height: 1.8;
+    font-size: 8px;
+}
+
+.no-pony-buttons {
+    display: flex;
+    gap: 12px;
+    justify-content: center;
+    margin-top: 16px;
+}
+
+.buy-button {
+    background: #ff6b6b;
+    color: #ffffff;
+    border-color: #d32f2f;
+}
+
+.buy-button:hover {
+    background: #f55555;
+}

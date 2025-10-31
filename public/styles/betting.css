@@ -1,0 +1,238 @@
+/* Betting Interface Styles */
+
+.betting-section {
+    background: linear-gradient(135deg, #ffffff, #f8f8f8);
+}
+
+.bet-controls {
+    margin-bottom: 16px;
+}
+
+.selected-bets {
+    background: #f9f9f9;
+    border: 2px solid #e0e0e0;
+    padding: 12px;
+    margin-bottom: 12px;
+    min-height: 60px;
+    max-height: 200px;
+    overflow-y: auto;
+}
+
+.selected-bet-item {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    background: #ffffff;
+    border: 1px solid #cccccc;
+    padding: 8px 12px;
+    margin-bottom: 8px;
+    font-size: 8px;
+}
+
+.selected-bet-info {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+}
+
+.selected-bet-controls {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+}
+
+.bet-amount-input {
+    width: 60px;
+    padding: 2px 4px;
+    border: 1px solid #cccccc;
+    font-size: 8px;
+    text-align: center;
+}
+
+.bet-actions {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 12px;
+    flex-wrap: wrap;
+}
+
+.total-bet {
+    font-size: 10px;
+    color: #0066cc;
+    font-weight: bold;
+    background: #e3f2fd;
+    padding: 8px 12px;
+    border: 1px solid #bbdefb;
+}
+
+#placeBetBtn {
+    background: #ff6b6b;
+    color: #ffffff;
+    border-color: #d32f2f;
+    font-size: 10px;
+    padding: 10px 16px;
+}
+
+#placeBetBtn:hover {
+    background: #f55555;
+}
+
+#clearBetsBtn {
+    background: #666666;
+    color: #ffffff;
+    border-color: #444444;
+    font-size: 8px;
+}
+
+#clearBetsBtn:hover {
+    background: #555555;
+}
+
+/* Horses Grid */
+.horses-grid {
+    display: grid;
+    grid-template-columns: repeat(8, 1fr);
+    grid-template-rows: repeat(2, 1fr);
+    gap: 8px;
+    margin-top: 12px;
+}
+
+.horse-bet-button {
+    background: #ffffff;
+    border: 2px solid #e0e0e0;
+    padding: 8px;
+    cursor: pointer;
+    transition: all 0.2s ease;
+    position: relative;
+    min-height: 100px;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    gap: 4px;
+    text-align: center;
+}
+
+.horse-bet-input {
+    width: 100%;
+    margin-top: 4px;
+    font-size: 7px;
+    padding: 4px;
+    text-align: center;
+    opacity: 0;
+    transition: opacity 0.3s ease;
+}
+
+.horse-bet-button.selected .horse-bet-input {
+    opacity: 1;
+}
+
+.horse-bet-remove {
+    position: absolute;
+    top: 4px;
+    right: 4px;
+    background: #ff6b6b;
+    color: #ffffff;
+    border: 1px solid #d32f2f;
+    width: 20px;
+    height: 20px;
+    font-size: 10px;
+    padding: 0;
+    display: none;
+    align-items: center;
+    justify-content: center;
+    cursor: pointer;
+}
+
+.horse-bet-button.selected .horse-bet-remove {
+    display: flex;
+}
+
+.horse-bet-button:hover {
+    border-color: #ff6b6b;
+    box-shadow: 0 2px 8px rgba(255, 107, 107, 0.3);
+    transform: translateY(-2px);
+}
+
+.horse-bet-button.selected {
+    border-color: #ff6b6b;
+    background: #fff0f0;
+    box-shadow: 0 4px 12px rgba(255, 107, 107, 0.4);
+}
+
+.horse-emoji {
+    font-size: 20px;
+    margin-bottom: 4px;
+}
+
+.horse-number {
+    font-size: 6px;
+    color: #666666;
+    font-weight: bold;
+    margin-bottom: 2px;
+}
+
+.horse-name {
+    font-size: 6px;
+    color: #333333;
+    font-weight: bold;
+    margin-bottom: 4px;
+}
+
+.horse-bets {
+    font-size: 6px;
+    color: #0066cc;
+    background: #e3f2fd;
+    padding: 2px 6px;
+    border: 1px solid #bbdefb;
+}
+
+/* Responsive Design */
+@media (max-width: 768px) {
+    .horses-grid {
+        grid-template-columns: repeat(4, 1fr);
+        gap: 4px;
+    }
+    
+    .horse-bet-button {
+        min-height: 80px;
+        padding: 6px 4px;
+    }
+    
+    .horse-emoji {
+        font-size: 16px;
+    }
+    
+    .horse-name {
+        font-size: 5px;
+    }
+    
+    .horse-number {
+        font-size: 5px;
+    }
+}
+
+@media (max-width: 480px) {
+    .horses-grid {
+        grid-template-columns: repeat(4, 1fr);
+        gap: 2px;
+    }
+    
+    .horse-bet-button {
+        min-height: 70px;
+        padding: 4px 2px;
+    }
+    
+    .horse-emoji {
+        font-size: 14px;
+    }
+    
+    .horse-name {
+        font-size: 4px;
+    }
+    
+    .horse-number {
+        font-size: 4px;
+    }
+}

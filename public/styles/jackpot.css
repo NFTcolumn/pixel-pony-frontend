@@ -1,0 +1,177 @@
+/* Jackpot and Lottery Styles */
+
+.jackpot-section {
+    background: linear-gradient(135deg, #ffd700, #ffed4e);
+    color: #333333;
+    border: 3px solid #ff6b6b;
+}
+
+.jackpot-section h2 {
+    color: #d32f2f;
+    text-shadow: 1px 1px 2px rgba(255, 255, 255, 0.8);
+}
+
+.jackpot-info {
+    display: flex;
+    flex-direction: column;
+    gap: 16px;
+    margin-bottom: 16px;
+}
+
+.jackpot-pool {
+    text-align: center;
+    background: rgba(255, 255, 255, 0.8);
+    border-radius: 8px;
+    padding: 16px;
+    border: 2px solid #ff6b6b;
+}
+
+.jackpot-pool h3 {
+    font-size: 12px;
+    color: #d32f2f;
+    margin-bottom: 8px;
+}
+
+#jackpotAmount {
+    font-size: 16px;
+    color: #0066cc;
+    font-weight: bold;
+    text-shadow: 1px 1px 2px rgba(255, 255, 255, 0.8);
+}
+
+.winning-numbers {
+    text-align: center;
+    background: rgba(255, 255, 255, 0.6);
+    border-radius: 8px;
+    padding: 12px;
+    border: 1px solid #cccccc;
+}
+
+.winning-numbers h4 {
+    font-size: 8px;
+    color: #333333;
+    margin-bottom: 8px;
+}
+
+.numbers-display {
+    display: flex;
+    justify-content: center;
+    gap: 8px;
+    margin-top: 8px;
+}
+
+.number-ball {
+    background: #ff6b6b;
+    color: #ffffff;
+    width: 32px;
+    height: 32px;
+    border-radius: 50%;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 10px;
+    font-weight: bold;
+    border: 2px solid #d32f2f;
+    box-shadow: 0 2px 4px rgba(0, 0, 0, 0.3);
+}
+
+.lottery-tickets {
+    background: rgba(255, 255, 255, 0.9);
+    border-radius: 8px;
+    padding: 12px;
+    border: 1px solid #cccccc;
+}
+
+.lottery-tickets h4 {
+    font-size: 8px;
+    color: #333333;
+    margin-bottom: 8px;
+    text-align: center;
+}
+
+.tickets-list {
+    min-height: 40px;
+    margin-bottom: 12px;
+    text-align: center;
+}
+
+.tickets-list p {
+    font-size: 7px;
+    color: #666666;
+    line-height: 1.6;
+}
+
+#checkJackpotBtn {
+    width: 100%;
+    background: #ff6b6b;
+    color: #ffffff;
+    border-color: #d32f2f;
+    font-size: 8px;
+    padding: 8px 12px;
+}
+
+#checkJackpotBtn:hover {
+    background: #f55555;
+}
+
+/* User Bets and Results */
+.user-bets {
+    background: linear-gradient(135deg, #ffffff, #f0f8e8);
+}
+
+.bets-list {
+    max-height: 200px;
+    overflow-y: auto;
+    margin-bottom: 12px;
+}
+
+.bet-item {
+    background: #ffffff;
+    border: 1px solid #e0e0e0;
+    border-radius: 4px;
+    padding: 8px 12px;
+    margin-bottom: 6px;
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    font-size: 7px;
+}
+
+.bet-item.winning {
+    background: #e8f5e8;
+    border-color: #9bbc0f;
+}
+
+.bet-item.pending {
+    background: #fff3e0;
+    border-color: #ffa500;
+}
+
+#claimWinningsBtn {
+    width: 100%;
+    background: #9bbc0f;
+    color: #0f380f;
+    border-color: #306230;
+    font-size: 8px;
+    padding: 8px 12px;
+}
+
+#claimWinningsBtn:hover {
+    background: #8bac0f;
+}
+
+.race-results {
+    background: linear-gradient(135deg, #ffffff, #f8f8f8);
+}
+
+.results-list {
+    max-height: 150px;
+    overflow-y: auto;
+    text-align: center;
+}
+
+.results-list p {
+    font-size: 7px;
+    color: #666666;
+    line-height: 1.6;
+}
