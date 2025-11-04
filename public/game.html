@@ -22,6 +22,11 @@
     <meta name="twitter:title" content="Pixel Pony Racing - Play Now!">
     <meta name="twitter:description" content="Instant 16-horse racing on Base blockchain with fair tokenomics">
     <meta name="twitter:image" content="/favicon.ico">
+
+    <!-- Farcaster Mini App -->
+    <meta name="fc:miniapp" content='{"version":"1","imageUrl":"https://pixel-pony-frontend.onrender.com/favicon.ico","button":{"title":"🏇 Race Now","action":{"type":"launch_frame","name":"Pixel Ponies","url":"https://pixel-pony-frontend.onrender.com/game","splashImageUrl":"https://pixel-pony-frontend.onrender.com/favicon.ico","splashBackgroundColor":"#bdc3ff"}}}' />
+    <meta name="fc:frame" content='{"version":"1","imageUrl":"https://pixel-pony-frontend.onrender.com/favicon.ico","button":{"title":"🏇 Race Now","action":{"type":"launch_frame","name":"Pixel Ponies","url":"https://pixel-pony-frontend.onrender.com/game","splashImageUrl":"https://pixel-pony-frontend.onrender.com/favicon.ico","splashBackgroundColor":"#bdc3ff"}}}' />
+
     <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Press+Start+2P&display=swap">
     <style>
         /* Retro pixel overrides - MUST BE ON TOP */
@@ -726,6 +731,22 @@
 
     <!-- WalletConnect for mobile support -->
     <script src="https://cdn.jsdelivr.net/npm/@walletconnect/web3-provider@1.8.0/dist/umd/index.min.js"></script>
+
+    <!-- Farcaster SDK -->
+    <script type="module">
+        import { sdk } from 'https://esm.sh/@farcaster/miniapp-sdk';
+        window.farcasterSdk = sdk;
+
+        // Call ready() to hide loading screen
+        (async () => {
+            try {
+                await sdk.actions.ready();
+                console.log('Farcaster Mini App ready');
+            } catch (error) {
+                console.log('Not running in Farcaster context, skipping ready()');
+            }
+        })();
+    </script>
 
     <script>
         // Contract Addresses on Base Mainnet
