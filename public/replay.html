@@ -1,0 +1,448 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Race Replay - Pixel Ponies</title>
+    <link rel="icon" type="image/x-icon" href="favicon.ico">
+    <link rel="manifest" href="/manifest.json">
+    <link rel="apple-touch-icon" sizes="180x180" href="/favicon.ico">
+
+    <!-- Styles -->
+    <link rel="stylesheet" href="styles.css">
+    <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Press+Start+2P&display=swap">
+
+    <!-- Open Graph / Facebook -->
+    <meta property="og:type" content="website">
+    <meta property="og:title" content="Race Replay - Pixel Ponies">
+    <meta property="og:description" content="Watch this epic Pixel Ponies race!">
+    <meta property="og:image" content="/favicon.ico">
+
+    <!-- Twitter -->
+    <meta name="twitter:card" content="summary">
+    <meta name="twitter:title" content="Race Replay - Pixel Ponies">
+    <meta name="twitter:description" content="Watch this epic Pixel Ponies race!">
+    <meta name="twitter:image" content="/favicon.ico">
+
+    <style>
+        /* Retro pixel overrides */
+        * {
+            font-family: 'Press Start 2P', monospace !important;
+        }
+        body {
+            background: #bdc3ff !important;
+            font-size: 8px !important;
+            padding: 8px !important;
+        }
+        button {
+            background: #ff6b6b !important;
+            border: 2px solid #d32f2f !important;
+            border-radius: 0 !important;
+            font-size: 8px !important;
+            box-shadow: none !important;
+            padding: 8px 12px !important;
+            cursor: pointer;
+        }
+        button:hover {
+            background: #f55555 !important;
+        }
+
+        /* Race Track Styles */
+        .track-container {
+            background: linear-gradient(to bottom, #1a202c 0%, #2d3748 100%);
+            border: 3px solid #4a5568;
+            border-radius: 10px;
+            padding: 20px;
+            position: relative;
+            min-height: 400px;
+            margin: 20px 0;
+        }
+
+        .track-lane {
+            background: linear-gradient(90deg, #2d3748 0%, #4a5568 50%, #2d3748 100%);
+            height: 20px;
+            margin: 4px 0;
+            border-radius: 5px;
+            position: relative;
+            border: 1px solid #718096;
+            display: flex;
+            align-items: center;
+        }
+
+        .lane-number {
+            position: absolute;
+            left: 5px;
+            color: #fff;
+            font-size: 8px;
+            z-index: 1;
+        }
+
+        .horse-racer {
+            position: absolute;
+            left: 30px;
+            top: 50%;
+            transform: translateY(-50%);
+            transition: left 0.1s linear;
+            filter: drop-shadow(0 2px 4px rgba(0, 0, 0, 0.5));
+            width: 32px;
+            height: 32px;
+            image-rendering: pixelated;
+            image-rendering: -moz-crisp-edges;
+            image-rendering: crisp-edges;
+        }
+
+        .horse-racer.winner {
+            animation: winner-pulse 0.5s ease-in-out infinite;
+        }
+
+        @keyframes winner-pulse {
+            0%, 100% {
+                transform: translateY(-50%) scale(1);
+                filter: drop-shadow(0 2px 4px rgba(0, 0, 0, 0.5)) brightness(1);
+            }
+            50% {
+                transform: translateY(-50%) scale(1.3);
+                filter: drop-shadow(0 0 12px rgba(255, 215, 0, 1)) brightness(1.2);
+            }
+        }
+
+        .finish-line {
+            position: absolute;
+            right: 30px;
+            top: 0;
+            bottom: 0;
+            width: 4px;
+            background: repeating-linear-gradient(
+                45deg,
+                #fff,
+                #fff 10px,
+                #000 10px,
+                #000 20px
+            );
+        }
+
+        .start-line {
+            position: absolute;
+            left: 30px;
+            top: 0;
+            bottom: 0;
+            width: 4px;
+            background: repeating-linear-gradient(
+                45deg,
+                #4ade80,
+                #4ade80 10px,
+                #22c55e 10px,
+                #22c55e 20px
+            );
+        }
+
+        .share-buttons {
+            display: flex;
+            gap: 12px;
+            justify-content: center;
+            margin: 20px 0;
+            flex-wrap: wrap;
+        }
+
+        .share-buttons button {
+            padding: 12px 20px !important;
+            font-size: 10px !important;
+        }
+
+        .loading {
+            text-align: center;
+            padding: 40px;
+            color: #666;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <header>
+            <a href="/">
+                <img src="logo.png" alt="Pixel Ponies Logo" style="height: 48px; margin-bottom: 8px;">
+            </a>
+            <h1>RACE REPLAY</h1>
+            <p id="raceTitle">LOADING RACE...</p>
+        </header>
+
+        <main>
+            <!-- Loading State -->
+            <div id="loadingSection" class="loading">
+                <p>Loading race data...</p>
+            </div>
+
+            <!-- Race Info -->
+            <section id="raceInfoSection" style="display: none;">
+                <h2>Race Details</h2>
+                <div style="text-align: left; font-size: 8px; line-height: 1.8; padding: 16px; background: #ffffff; border: 2px solid #cccccc;">
+                    <p><strong>Race ID:</strong> <span id="raceId"></span></p>
+                    <p><strong>Player:</strong> <span id="playerAddress"></span></p>
+                    <p><strong>Bet Amount:</strong> <span id="betAmount"></span> PONY</p>
+                    <p><strong>Result:</strong> <span id="raceResult"></span></p>
+                    <p><strong>Payout:</strong> <span id="payoutAmount"></span> PONY</p>
+                </div>
+            </section>
+
+            <!-- Race Track -->
+            <section id="raceTrackSection" style="display: none;">
+                <h2>🏁 Race Animation</h2>
+                <div class="track-container" id="trackContainer">
+                    <div class="start-line"></div>
+                    <div class="finish-line"></div>
+                    <div id="raceLanes"></div>
+                </div>
+                <div style="text-align: center; margin-top: 16px;">
+                    <button onclick="replayRace()">🔄 Replay Race</button>
+                </div>
+            </section>
+
+            <!-- Share Section -->
+            <section id="shareSection" style="display: none;">
+                <h2>📤 Share This Race</h2>
+                <div class="share-buttons">
+                    <button onclick="shareTwitter()">🐦 Share on Twitter</button>
+                    <button onclick="shareFarcaster()">🟣 Share on Farcaster</button>
+                    <button onclick="copyLink()">🔗 Copy Link</button>
+                </div>
+            </section>
+
+            <!-- Back Button -->
+            <section style="text-align: center; padding: 24px;">
+                <a href="/game">
+                    <button style="font-size: 12px; padding: 16px 32px;">
+                        🎮 PLAY NOW 🎮
+                    </button>
+                </a>
+            </section>
+        </main>
+
+        <!-- Footer -->
+        <footer style="background: #ffffff; border: 2px solid #cccccc; margin-top: 24px; padding: 16px; text-align: center; box-shadow: 0 4px 8px rgba(0,0,0,0.1);">
+            <div style="display: flex; justify-content: center; gap: 16px; flex-wrap: wrap; margin-bottom: 12px;">
+                <a href="/" style="color: #000000; text-decoration: none; font-size: 8px;">🏠 HOME</a>
+                <a href="/game" style="color: #ff6b6b; text-decoration: none; font-size: 8px;">🎮 PLAY NOW</a>
+                <a href="/buy" style="color: #000000; text-decoration: none; font-size: 8px;">💰 BUY $PONY</a>
+                <a href="/whitepaper" style="color: #000000; text-decoration: none; font-size: 8px;">📄 WHITEPAPER</a>
+                <a href="/terms" style="color: #000000; text-decoration: none; font-size: 8px;">⚖️ TERMS</a>
+                <a href="/privacy" style="color: #000000; text-decoration: none; font-size: 8px;">🔒 PRIVACY</a>
+            </div>
+            <p style="font-size: 6px; color: #666666; line-height: 1.6;">
+                Pixel Ponies © 2025 | 16 Pixelated Ponies Racing On-Chain For No Reason<br>
+                Built on Base Network | Not financial advice | Play responsibly
+            </p>
+        </footer>
+    </div>
+
+    <!-- Ethers.js -->
+    <script src="https://cdn.jsdelivr.net/npm/ethers@5.7.2/dist/ethers.umd.min.js"></script>
+
+    <script>
+        // Contract Addresses on Base Mainnet
+        const PIXEL_PONY_ADDRESS = "0x2B4652Bd6149E407E3F57190E25cdBa1FC9d37d8";
+        const BASE_MAINNET_CHAIN_ID = 8453;
+
+        const PIXEL_PONY_ABI = [
+            "event RaceExecuted(uint256 indexed raceId, address indexed player, uint256 horseId, uint256[3] winners, uint256 payout, bool won)"
+        ];
+
+        let raceData = null;
+        let currentRaceId = null;
+
+        // Get race ID from URL
+        function getRaceIdFromUrl() {
+            const urlParams = new URLSearchParams(window.location.search);
+            return urlParams.get('id');
+        }
+
+        // Load race data from blockchain
+        async function loadRaceData(raceId) {
+            try {
+                console.log('Loading race data for ID:', raceId);
+
+                // Connect to Base Mainnet
+                const provider = new ethers.providers.JsonRpcProvider('https://mainnet.base.org');
+                const contract = new ethers.Contract(PIXEL_PONY_ADDRESS, PIXEL_PONY_ABI, provider);
+
+                // Query for RaceExecuted event with this race ID
+                const filter = contract.filters.RaceExecuted(raceId);
+                const events = await contract.queryFilter(filter);
+
+                if (events.length === 0) {
+                    throw new Error('Race not found');
+                }
+
+                const event = events[0];
+                const args = event.args;
+
+                raceData = {
+                    raceId: args.raceId.toString(),
+                    player: args.player,
+                    playerHorseId: args.horseId.toNumber(),
+                    winners: [args.winners[0].toNumber(), args.winners[1].toNumber(), args.winners[2].toNumber()],
+                    payout: ethers.utils.formatUnits(args.payout, 9), // 9 decimals for PONY
+                    won: args.won
+                };
+
+                console.log('Race data loaded:', raceData);
+                return raceData;
+            } catch (error) {
+                console.error('Error loading race data:', error);
+                throw error;
+            }
+        }
+
+        // Display race data
+        function displayRaceData() {
+            document.getElementById('raceTitle').textContent = `RACE #${raceData.raceId}`;
+            document.getElementById('raceId').textContent = raceData.raceId;
+            document.getElementById('playerAddress').textContent = raceData.player.slice(0, 6) + '...' + raceData.player.slice(-4);
+            document.getElementById('betAmount').textContent = parseFloat(raceData.payout / (raceData.won ? 10 : 1)).toFixed(2);
+
+            const result = raceData.won ?
+                `🏆 WON! Player's horse (#${raceData.playerHorseId + 1}) finished 1st` :
+                `❌ Lost. Player's horse (#${raceData.playerHorseId + 1}) didn't place`;
+            document.getElementById('raceResult').textContent = result;
+            document.getElementById('payoutAmount').textContent = parseFloat(raceData.payout).toFixed(2);
+
+            // Update meta tags
+            document.querySelector('meta[property="og:title"]').content = `Race #${raceData.raceId} - Pixel Ponies`;
+            document.querySelector('meta[name="twitter:title"]').content = `Race #${raceData.raceId} - Pixel Ponies`;
+            document.querySelector('meta[property="og:description"]').content = result;
+            document.querySelector('meta[name="twitter:description"]').content = result;
+
+            // Show sections
+            document.getElementById('loadingSection').style.display = 'none';
+            document.getElementById('raceInfoSection').style.display = 'block';
+            document.getElementById('raceTrackSection').style.display = 'block';
+            document.getElementById('shareSection').style.display = 'block';
+        }
+
+        // Create race track
+        function createRaceTrack() {
+            const container = document.getElementById('raceLanes');
+            container.innerHTML = '';
+
+            for (let i = 0; i < 16; i++) {
+                const lane = document.createElement('div');
+                lane.className = 'track-lane';
+                lane.innerHTML = `
+                    <span class="lane-number">#${i + 1}</span>
+                    <img src="sprites/${(i % 30) + 1}.png" alt="Pony ${i + 1}" class="horse-racer" id="horse-${i}">
+                `;
+                container.appendChild(lane);
+            }
+        }
+
+        // Animate race
+        function animateRace() {
+            const trackWidth = document.getElementById('trackContainer').offsetWidth - 100;
+            const duration = 5000; // 5 seconds
+            const fps = 60;
+            const frames = (duration / 1000) * fps;
+
+            // Generate random positions for each horse
+            const positions = [];
+            for (let i = 0; i < 16; i++) {
+                positions[i] = [];
+                let currentPos = 0;
+                for (let frame = 0; frame < frames; frame++) {
+                    const progress = Math.random() * 3;
+                    currentPos += progress;
+                    positions[i][frame] = Math.min(currentPos, trackWidth);
+                }
+                // Normalize to finish at different times based on winners
+                const finishFrame = frames - (30 * (15 - i));
+                for (let frame = 0; frame < frames; frame++) {
+                    positions[i][frame] = (positions[i][frame] / positions[i][frames - 1]) * trackWidth * (frame / finishFrame);
+                    positions[i][frame] = Math.min(positions[i][frame], trackWidth);
+                }
+            }
+
+            // Adjust winners to finish first
+            raceData.winners.forEach((winnerId, place) => {
+                for (let frame = 0; frame < frames; frame++) {
+                    positions[winnerId][frame] = trackWidth * ((frame + (30 * (2 - place))) / frames);
+                    positions[winnerId][frame] = Math.min(positions[winnerId][frame], trackWidth);
+                }
+            });
+
+            let frame = 0;
+            const interval = setInterval(() => {
+                for (let i = 0; i < 16; i++) {
+                    const horse = document.getElementById(`horse-${i}`);
+                    if (horse) {
+                        horse.style.left = positions[i][frame] + 'px';
+
+                        // Add winner animation
+                        if (frame >= frames - 30 && raceData.winners.includes(i)) {
+                            horse.classList.add('winner');
+                        }
+                    }
+                }
+
+                frame++;
+                if (frame >= frames) {
+                    clearInterval(interval);
+                }
+            }, 1000 / fps);
+        }
+
+        // Replay race
+        function replayRace() {
+            // Reset all horses
+            for (let i = 0; i < 16; i++) {
+                const horse = document.getElementById(`horse-${i}`);
+                if (horse) {
+                    horse.style.left = '30px';
+                    horse.classList.remove('winner');
+                }
+            }
+
+            // Restart animation
+            setTimeout(() => {
+                animateRace();
+            }, 100);
+        }
+
+        // Share functions
+        function shareTwitter() {
+            const url = window.location.href;
+            const text = `Check out this epic Pixel Ponies race! 🏇 Race #${raceData.raceId}`;
+            window.open(`https://twitter.com/intent/tweet?text=${encodeURIComponent(text)}&url=${encodeURIComponent(url)}`, '_blank');
+        }
+
+        function shareFarcaster() {
+            const url = window.location.href;
+            const text = `Check out this epic Pixel Ponies race! 🏇 Race #${raceData.raceId}\n${url}`;
+            window.open(`https://warpcast.com/~/compose?text=${encodeURIComponent(text)}`, '_blank');
+        }
+
+        function copyLink() {
+            const url = window.location.href;
+            navigator.clipboard.writeText(url).then(() => {
+                alert('Race link copied to clipboard!');
+            });
+        }
+
+        // Initialize on page load
+        document.addEventListener('DOMContentLoaded', async () => {
+            currentRaceId = getRaceIdFromUrl();
+
+            if (!currentRaceId) {
+                document.getElementById('loadingSection').innerHTML = '<p style="color: red;">Error: No race ID provided</p>';
+                return;
+            }
+
+            try {
+                await loadRaceData(currentRaceId);
+                displayRaceData();
+                createRaceTrack();
+                animateRace();
+            } catch (error) {
+                document.getElementById('loadingSection').innerHTML = `<p style="color: red;">Error loading race: ${error.message}</p>`;
+            }
+        });
+    </script>
+</body>
+</html>

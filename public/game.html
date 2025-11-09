@@ -1245,11 +1245,16 @@
             const resultItem = document.createElement('div');
             resultItem.className = 'race-result-item';
             resultItem.innerHTML = `
-                <div style="display: flex; justify-content: space-between; align-items: center;">
+                <div style="display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 12px;">
                     <div>
                         <strong>Race #${result.raceId}</strong> - Pony #${parseInt(result.horseId) + 1}
                         <div style="margin-top: 5px; color: #666;">
                             Winners: Ponies #${result.winners.map(w => parseInt(w) + 1).join(', #')}
+                        </div>
+                        <div style="margin-top: 8px;">
+                            <a href="/replay?id=${result.raceId}" target="_blank">
+                                <button style="font-size: 8px; padding: 6px 10px;">🎬 Watch Replay</button>
+                            </a>
                         </div>
                     </div>
                     <div style="text-align: right;">
