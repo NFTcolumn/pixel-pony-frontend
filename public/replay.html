@@ -286,7 +286,7 @@
                 </div>
                 <div style="text-align: center; margin-top: 16px;">
                     <button onclick="replayAnimation()">🔄 Replay Race</button>
-                    <button onclick="shareRace()" style="margin-left: 12px;">📤 Share Race</button>
+                    <button onclick="shareOnTwitter()" style="margin-left: 12px;">🐦 Share on Twitter</button>
                 </div>
             </section>
 
@@ -499,10 +499,14 @@
             displayedRaces += racesToShow.length;
 
             // Show/hide load more button
+            console.log(`Displayed: ${displayedRaces}, Total: ${allRaces.length}`);
+            const loadMoreBtn = document.getElementById('loadMoreSection');
             if (displayedRaces < allRaces.length) {
-                document.getElementById('loadMoreSection').style.display = 'block';
+                console.log('Showing Load More button');
+                loadMoreBtn.style.display = 'block';
             } else {
-                document.getElementById('loadMoreSection').style.display = 'none';
+                console.log('Hiding Load More button');
+                loadMoreBtn.style.display = 'none';
             }
 
             document.getElementById('raceListSection').style.display = 'block';
@@ -645,23 +649,11 @@
             }, 100);
         }
 
-        // Share race
-        function shareRace() {
-            const url = `${window.location.origin}/replay?id=${currentViewingRace.raceId}`;
-            const text = `Check out Race #${currentViewingRace.raceId} on Pixel Ponies! 🏇`;
-
-            if (navigator.share) {
-                navigator.share({
-                    title: `Race #${currentViewingRace.raceId} - Pixel Ponies`,
-                    text: text,
-                    url: url
-                });
-            } else {
-                // Fallback: copy to clipboard
-                navigator.clipboard.writeText(`${text}\n${url}`).then(() => {
-                    alert('Race link copied to clipboard!');
-                });
-            }
+        // Share race on Twitter
+        function shareOnTwitter() {
+            const text = `Just watched an epic race on Pixel Ponies! 🏇 Play now at pxpony.com`;
+            const twitterUrl = `https://twitter.com/intent/tweet?text=${encodeURIComponent(text)}`;
+            window.open(twitterUrl, '_blank', 'width=550,height=420');
         }
 
         // Initialize on page load
