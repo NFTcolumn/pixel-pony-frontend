@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Race Replay - Pixel Ponies</title>
+    <title>Race History - Pixel Ponies</title>
     <link rel="icon" type="image/x-icon" href="favicon.ico">
     <link rel="manifest" href="/manifest.json">
     <link rel="apple-touch-icon" sizes="180x180" href="/favicon.ico">
@@ -14,14 +14,14 @@
 
     <!-- Open Graph / Facebook -->
     <meta property="og:type" content="website">
-    <meta property="og:title" content="Race Replay - Pixel Ponies">
-    <meta property="og:description" content="Watch this epic Pixel Ponies race!">
+    <meta property="og:title" content="Race History - Pixel Ponies">
+    <meta property="og:description" content="View all Pixel Ponies races on Base blockchain">
     <meta property="og:image" content="/favicon.ico">
 
     <!-- Twitter -->
     <meta name="twitter:card" content="summary">
-    <meta name="twitter:title" content="Race Replay - Pixel Ponies">
-    <meta name="twitter:description" content="Watch this epic Pixel Ponies race!">
+    <meta name="twitter:title" content="Race History - Pixel Ponies">
+    <meta name="twitter:description" content="View all Pixel Ponies races on Base blockchain">
     <meta name="twitter:image" content="/favicon.ico">
 
     <style>
@@ -45,6 +45,97 @@
         }
         button:hover {
             background: #f55555 !important;
+        }
+
+        .stats-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+            gap: 16px;
+            margin: 20px 0;
+        }
+
+        .stat-card {
+            background: #ffffff;
+            border: 2px solid #cccccc;
+            padding: 20px;
+            text-align: center;
+        }
+
+        .stat-value {
+            font-size: 20px;
+            color: #ff6b6b;
+            margin: 10px 0;
+        }
+
+        .stat-label {
+            font-size: 8px;
+            color: #666;
+        }
+
+        .race-list {
+            margin: 20px 0;
+        }
+
+        .race-item {
+            background: #ffffff;
+            border: 2px solid #cccccc;
+            padding: 16px;
+            margin-bottom: 12px;
+            transition: transform 0.2s;
+        }
+
+        .race-item:hover {
+            transform: translateX(4px);
+            border-color: #ff6b6b;
+        }
+
+        .race-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            flex-wrap: wrap;
+            gap: 12px;
+            margin-bottom: 12px;
+        }
+
+        .race-id {
+            font-size: 12px;
+            color: #ff6b6b;
+        }
+
+        .race-status {
+            padding: 4px 8px;
+            border: 2px solid;
+            font-size: 8px;
+        }
+
+        .race-status.won {
+            color: #22c55e;
+            border-color: #22c55e;
+            background: #f0fdf4;
+        }
+
+        .race-status.lost {
+            color: #ef4444;
+            border-color: #ef4444;
+            background: #fef2f2;
+        }
+
+        .race-details {
+            font-size: 8px;
+            color: #666;
+            line-height: 1.8;
+        }
+
+        .loading {
+            text-align: center;
+            padding: 40px;
+            color: #666;
+        }
+
+        .load-more {
+            text-align: center;
+            margin: 20px 0;
         }
 
         /* Race Track Styles */
@@ -95,6 +186,10 @@
             animation: winner-pulse 0.5s ease-in-out infinite;
         }
 
+        .horse-racer.player-horse {
+            filter: drop-shadow(0 0 8px rgba(255, 215, 0, 0.8)) drop-shadow(0 2px 4px rgba(0, 0, 0, 0.5));
+        }
+
         @keyframes winner-pulse {
             0%, 100% {
                 transform: translateY(-50%) scale(1);
@@ -136,23 +231,8 @@
             );
         }
 
-        .share-buttons {
-            display: flex;
-            gap: 12px;
-            justify-content: center;
-            margin: 20px 0;
-            flex-wrap: wrap;
-        }
-
-        .share-buttons button {
-            padding: 12px 20px !important;
-            font-size: 10px !important;
-        }
-
-        .loading {
-            text-align: center;
-            padding: 40px;
-            color: #666;
+        .race-item {
+            cursor: pointer;
         }
     </style>
 </head>
@@ -162,48 +242,61 @@
             <a href="/">
                 <img src="logo.png" alt="Pixel Ponies Logo" style="height: 48px; margin-bottom: 8px;">
             </a>
-            <h1>RACE REPLAY</h1>
-            <p id="raceTitle">LOADING RACE...</p>
+            <h1>RACE HISTORY</h1>
+            <p>ALL RACES ON BASE BLOCKCHAIN</p>
         </header>
 
         <main>
             <!-- Loading State -->
             <div id="loadingSection" class="loading">
-                <p>Loading race data...</p>
+                <p>Loading race data from blockchain...</p>
             </div>
 
-            <!-- Race Info -->
-            <section id="raceInfoSection" style="display: none;">
-                <h2>Race Details</h2>
-                <div style="text-align: left; font-size: 8px; line-height: 1.8; padding: 16px; background: #ffffff; border: 2px solid #cccccc;">
-                    <p><strong>Race ID:</strong> <span id="raceId"></span></p>
-                    <p><strong>Player:</strong> <span id="playerAddress"></span></p>
-                    <p><strong>Bet Amount:</strong> <span id="betAmount"></span> PONY</p>
-                    <p><strong>Result:</strong> <span id="raceResult"></span></p>
-                    <p><strong>Payout:</strong> <span id="payoutAmount"></span> PONY</p>
+            <!-- Statistics -->
+            <section id="statsSection" style="display: none;">
+                <h2>📊 Race Statistics</h2>
+                <div class="stats-grid">
+                    <div class="stat-card">
+                        <div class="stat-label">TOTAL RACES</div>
+                        <div class="stat-value" id="totalRaces">0</div>
+                    </div>
+                    <div class="stat-card">
+                        <div class="stat-label">UNIQUE PLAYERS</div>
+                        <div class="stat-value" id="totalPlayers">0</div>
+                    </div>
+                    <div class="stat-card">
+                        <div class="stat-label">TOTAL PRIZES WON</div>
+                        <div class="stat-value" id="totalPrizes">0</div>
+                        <div class="stat-label">BILLION PONY</div>
+                    </div>
                 </div>
             </section>
 
-            <!-- Race Track -->
-            <section id="raceTrackSection" style="display: none;">
-                <h2>🏁 Race Animation</h2>
+            <!-- Race Animation Viewer -->
+            <section id="animationSection" style="display: none;">
+                <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 16px;">
+                    <h2 id="animationTitle">🏁 Race Animation</h2>
+                    <button onclick="backToList()" style="font-size: 8px;">⬅️ Back to List</button>
+                </div>
                 <div class="track-container" id="trackContainer">
                     <div class="start-line"></div>
                     <div class="finish-line"></div>
                     <div id="raceLanes"></div>
                 </div>
                 <div style="text-align: center; margin-top: 16px;">
-                    <button onclick="replayRace()">🔄 Replay Race</button>
+                    <button onclick="replayAnimation()">🔄 Replay Race</button>
+                    <button onclick="shareRace()" style="margin-left: 12px;">📤 Share Race</button>
                 </div>
             </section>
 
-            <!-- Share Section -->
-            <section id="shareSection" style="display: none;">
-                <h2>📤 Share This Race</h2>
-                <div class="share-buttons">
-                    <button onclick="shareTwitter()">🐦 Share on Twitter</button>
-                    <button onclick="shareFarcaster()">🟣 Share on Farcaster</button>
-                    <button onclick="copyLink()">🔗 Copy Link</button>
+            <!-- Race List -->
+            <section id="raceListSection" style="display: none;">
+                <h2>🏁 Recent Races</h2>
+                <div id="raceList" class="race-list">
+                    <!-- Races will be populated here -->
+                </div>
+                <div class="load-more" id="loadMoreSection" style="display: none;">
+                    <button onclick="loadMoreRaces()">Load More Races</button>
                 </div>
             </section>
 
@@ -246,76 +339,168 @@
             "event RaceExecuted(uint256 indexed raceId, address indexed player, uint256 horseId, uint256[3] winners, uint256 payout, bool won)"
         ];
 
-        let raceData = null;
-        let currentRaceId = null;
+        let allRaces = [];
+        let displayedRaces = 0;
+        const RACES_PER_PAGE = 20;
+        let currentViewingRace = null;
+        let animationInterval = null;
 
-        // Get race ID from URL
-        function getRaceIdFromUrl() {
-            const urlParams = new URLSearchParams(window.location.search);
-            return urlParams.get('id');
-        }
-
-        // Load race data from blockchain
-        async function loadRaceData(raceId) {
+        // Load all races from blockchain
+        async function loadAllRaces() {
             try {
-                console.log('Loading race data for ID:', raceId);
+                console.log('Loading all races from blockchain...');
 
                 // Connect to Base Mainnet
                 const provider = new ethers.providers.JsonRpcProvider('https://mainnet.base.org');
                 const contract = new ethers.Contract(PIXEL_PONY_ADDRESS, PIXEL_PONY_ABI, provider);
 
-                // Query for RaceExecuted event with this race ID
-                const filter = contract.filters.RaceExecuted(raceId);
-                const events = await contract.queryFilter(filter);
+                // Query all RaceExecuted events
+                const filter = contract.filters.RaceExecuted();
+                const events = await contract.queryFilter(filter, 0, 'latest');
 
-                if (events.length === 0) {
-                    throw new Error('Race not found');
-                }
+                console.log(`Found ${events.length} races`);
 
-                const event = events[0];
-                const args = event.args;
+                // Parse all races
+                allRaces = events.map(event => {
+                    const args = event.args;
+                    return {
+                        raceId: args.raceId.toString(),
+                        player: args.player,
+                        playerHorseId: args.horseId.toNumber(),
+                        winners: [
+                            args.winners[0].toNumber(),
+                            args.winners[1].toNumber(),
+                            args.winners[2].toNumber()
+                        ],
+                        payout: ethers.utils.formatUnits(args.payout, 9), // 9 decimals for PONY
+                        won: args.won,
+                        blockNumber: event.blockNumber
+                    };
+                });
 
-                raceData = {
-                    raceId: args.raceId.toString(),
-                    player: args.player,
-                    playerHorseId: args.horseId.toNumber(),
-                    winners: [args.winners[0].toNumber(), args.winners[1].toNumber(), args.winners[2].toNumber()],
-                    payout: ethers.utils.formatUnits(args.payout, 9), // 9 decimals for PONY
-                    won: args.won
-                };
+                // Sort by race ID descending (most recent first)
+                allRaces.sort((a, b) => parseInt(b.raceId) - parseInt(a.raceId));
 
-                console.log('Race data loaded:', raceData);
-                return raceData;
+                console.log('Races loaded:', allRaces);
+                return allRaces;
             } catch (error) {
-                console.error('Error loading race data:', error);
+                console.error('Error loading races:', error);
                 throw error;
             }
         }
 
-        // Display race data
-        function displayRaceData() {
-            document.getElementById('raceTitle').textContent = `RACE #${raceData.raceId}`;
-            document.getElementById('raceId').textContent = raceData.raceId;
-            document.getElementById('playerAddress').textContent = raceData.player.slice(0, 6) + '...' + raceData.player.slice(-4);
-            document.getElementById('betAmount').textContent = parseFloat(raceData.payout / (raceData.won ? 10 : 1)).toFixed(2);
+        // Calculate statistics
+        function calculateStats() {
+            const uniquePlayers = new Set(allRaces.map(r => r.player.toLowerCase())).size;
+            const totalPrizes = allRaces
+                .filter(r => r.won)
+                .reduce((sum, r) => sum + parseFloat(r.payout), 0);
 
-            const result = raceData.won ?
-                `🏆 WON! Player's horse (#${raceData.playerHorseId + 1}) finished 1st` :
-                `❌ Lost. Player's horse (#${raceData.playerHorseId + 1}) didn't place`;
-            document.getElementById('raceResult').textContent = result;
-            document.getElementById('payoutAmount').textContent = parseFloat(raceData.payout).toFixed(2);
+            return {
+                totalRaces: allRaces.length,
+                uniquePlayers: uniquePlayers,
+                totalPrizes: (totalPrizes / 1e9).toFixed(2) // Convert to billions
+            };
+        }
 
-            // Update meta tags
-            document.querySelector('meta[property="og:title"]').content = `Race #${raceData.raceId} - Pixel Ponies`;
-            document.querySelector('meta[name="twitter:title"]').content = `Race #${raceData.raceId} - Pixel Ponies`;
-            document.querySelector('meta[property="og:description"]').content = result;
-            document.querySelector('meta[name="twitter:description"]').content = result;
+        // Display statistics
+        function displayStats() {
+            const stats = calculateStats();
 
-            // Show sections
-            document.getElementById('loadingSection').style.display = 'none';
-            document.getElementById('raceInfoSection').style.display = 'block';
-            document.getElementById('raceTrackSection').style.display = 'block';
-            document.getElementById('shareSection').style.display = 'block';
+            document.getElementById('totalRaces').textContent = stats.totalRaces.toLocaleString();
+            document.getElementById('totalPlayers').textContent = stats.uniquePlayers.toLocaleString();
+            document.getElementById('totalPrizes').textContent = stats.totalPrizes;
+
+            document.getElementById('statsSection').style.display = 'block';
+        }
+
+        // Display races
+        function displayRaces(append = false) {
+            const container = document.getElementById('raceList');
+
+            if (!append) {
+                container.innerHTML = '';
+                displayedRaces = 0;
+            }
+
+            const racesToShow = allRaces.slice(displayedRaces, displayedRaces + RACES_PER_PAGE);
+
+            racesToShow.forEach(race => {
+                const raceItem = document.createElement('div');
+                raceItem.className = 'race-item';
+
+                const betAmount = race.won ? (parseFloat(race.payout) / 10).toFixed(2) : parseFloat(race.payout).toFixed(2);
+                const winnersText = race.winners.map(w => `#${w + 1}`).join(', ');
+
+                raceItem.innerHTML = `
+                    <div class="race-header">
+                        <div class="race-id">Race #${race.raceId}</div>
+                        <div class="race-status ${race.won ? 'won' : 'lost'}">
+                            ${race.won ? '✓ WON' : '✗ LOST'}
+                        </div>
+                    </div>
+                    <div class="race-details">
+                        <p><strong>Player:</strong> ${race.player.slice(0, 6)}...${race.player.slice(-4)}</p>
+                        <p><strong>Bet on Pony:</strong> #${race.playerHorseId + 1}</p>
+                        <p><strong>Winners:</strong> Ponies ${winnersText}</p>
+                        <p><strong>Bet Amount:</strong> ${betAmount}B PONY</p>
+                        ${race.won ? `<p><strong>Payout:</strong> ${parseFloat(race.payout).toFixed(2)}B PONY</p>` : ''}
+                        <div style="margin-top: 12px;">
+                            <button onclick="viewRaceAnimation(${allRaces.indexOf(race)})" style="font-size: 7px; padding: 4px 8px; margin-right: 8px;">🎬 Watch Replay</button>
+                            <a href="https://basescan.org/tx/${race.blockNumber}" target="_blank" onclick="event.stopPropagation();">
+                                <button style="font-size: 7px; padding: 4px 8px;">📊 Basescan</button>
+                            </a>
+                        </div>
+                    </div>
+                `;
+
+                container.appendChild(raceItem);
+            });
+
+            displayedRaces += racesToShow.length;
+
+            // Show/hide load more button
+            if (displayedRaces < allRaces.length) {
+                document.getElementById('loadMoreSection').style.display = 'block';
+            } else {
+                document.getElementById('loadMoreSection').style.display = 'none';
+            }
+
+            document.getElementById('raceListSection').style.display = 'block';
+        }
+
+        // Load more races
+        function loadMoreRaces() {
+            displayRaces(true);
+        }
+
+        // View race animation
+        function viewRaceAnimation(raceIndex) {
+            currentViewingRace = allRaces[raceIndex];
+
+            // Hide list, show animation
+            document.getElementById('raceListSection').style.display = 'none';
+            document.getElementById('statsSection').style.display = 'none';
+            document.getElementById('animationSection').style.display = 'block';
+            document.getElementById('animationTitle').textContent = `🏁 Race #${currentViewingRace.raceId} Replay`;
+
+            // Create and animate race
+            createRaceTrack();
+            animateRace();
+
+            // Scroll to animation
+            document.getElementById('animationSection').scrollIntoView({ behavior: 'smooth' });
+        }
+
+        // Back to list
+        function backToList() {
+            if (animationInterval) {
+                clearInterval(animationInterval);
+            }
+            currentViewingRace = null;
+            document.getElementById('animationSection').style.display = 'none';
+            document.getElementById('raceListSection').style.display = 'block';
+            document.getElementById('statsSection').style.display = 'block';
         }
 
         // Create race track
@@ -326,9 +511,15 @@
             for (let i = 0; i < 16; i++) {
                 const lane = document.createElement('div');
                 lane.className = 'track-lane';
+
+                const spriteNum = (i % 30) + 1;
+                const isPlayerHorse = i === currentViewingRace.playerHorseId;
+
                 lane.innerHTML = `
                     <span class="lane-number">#${i + 1}</span>
-                    <img src="sprites/${(i % 30) + 1}.png" alt="Pony ${i + 1}" class="horse-racer" id="horse-${i}">
+                    <img src="sprites/${spriteNum}.png" alt="Pony ${i + 1}"
+                         class="horse-racer ${isPlayerHorse ? 'player-horse' : ''}"
+                         id="horse-${i}">
                 `;
                 container.appendChild(lane);
             }
@@ -351,31 +542,41 @@
                     currentPos += progress;
                     positions[i][frame] = Math.min(currentPos, trackWidth);
                 }
-                // Normalize to finish at different times based on winners
-                const finishFrame = frames - (30 * (15 - i));
-                for (let frame = 0; frame < frames; frame++) {
-                    positions[i][frame] = (positions[i][frame] / positions[i][frames - 1]) * trackWidth * (frame / finishFrame);
-                    positions[i][frame] = Math.min(positions[i][frame], trackWidth);
-                }
             }
 
-            // Adjust winners to finish first
-            raceData.winners.forEach((winnerId, place) => {
+            // Adjust winners to finish first based on their place
+            currentViewingRace.winners.forEach((winnerId, place) => {
+                const finishFrame = frames - (place * 30); // 1st finishes first, then 2nd, then 3rd
                 for (let frame = 0; frame < frames; frame++) {
-                    positions[winnerId][frame] = trackWidth * ((frame + (30 * (2 - place))) / frames);
-                    positions[winnerId][frame] = Math.min(positions[winnerId][frame], trackWidth);
+                    const progress = frame / finishFrame;
+                    positions[winnerId][frame] = trackWidth * Math.min(progress, 1);
                 }
             });
 
+            // Normalize other horses to finish after winners
+            for (let i = 0; i < 16; i++) {
+                if (!currentViewingRace.winners.includes(i)) {
+                    const finishFrame = frames + (Math.random() * 50);
+                    for (let frame = 0; frame < frames; frame++) {
+                        positions[i][frame] = (positions[i][frame] / positions[i][frames - 1]) * trackWidth * (frame / finishFrame);
+                        positions[i][frame] = Math.min(positions[i][frame], trackWidth * 0.95);
+                    }
+                }
+            }
+
             let frame = 0;
-            const interval = setInterval(() => {
+            if (animationInterval) {
+                clearInterval(animationInterval);
+            }
+
+            animationInterval = setInterval(() => {
                 for (let i = 0; i < 16; i++) {
                     const horse = document.getElementById(`horse-${i}`);
                     if (horse) {
                         horse.style.left = positions[i][frame] + 'px';
 
-                        // Add winner animation
-                        if (frame >= frames - 30 && raceData.winners.includes(i)) {
+                        // Add winner animation when they cross finish line
+                        if (positions[i][frame] >= trackWidth - 50 && currentViewingRace.winners.includes(i)) {
                             horse.classList.add('winner');
                         }
                     }
@@ -383,13 +584,13 @@
 
                 frame++;
                 if (frame >= frames) {
-                    clearInterval(interval);
+                    clearInterval(animationInterval);
                 }
             }, 1000 / fps);
         }
 
-        // Replay race
-        function replayRace() {
+        // Replay animation
+        function replayAnimation() {
             // Reset all horses
             for (let i = 0; i < 16; i++) {
                 const horse = document.getElementById(`horse-${i}`);
@@ -405,42 +606,42 @@
             }, 100);
         }
 
-        // Share functions
-        function shareTwitter() {
-            const url = window.location.href;
-            const text = `Check out this epic Pixel Ponies race! 🏇 Race #${raceData.raceId}`;
-            window.open(`https://twitter.com/intent/tweet?text=${encodeURIComponent(text)}&url=${encodeURIComponent(url)}`, '_blank');
-        }
+        // Share race
+        function shareRace() {
+            const url = `${window.location.origin}/replay?id=${currentViewingRace.raceId}`;
+            const text = `Check out Race #${currentViewingRace.raceId} on Pixel Ponies! 🏇`;
 
-        function shareFarcaster() {
-            const url = window.location.href;
-            const text = `Check out this epic Pixel Ponies race! 🏇 Race #${raceData.raceId}\n${url}`;
-            window.open(`https://warpcast.com/~/compose?text=${encodeURIComponent(text)}`, '_blank');
-        }
-
-        function copyLink() {
-            const url = window.location.href;
-            navigator.clipboard.writeText(url).then(() => {
-                alert('Race link copied to clipboard!');
-            });
+            if (navigator.share) {
+                navigator.share({
+                    title: `Race #${currentViewingRace.raceId} - Pixel Ponies`,
+                    text: text,
+                    url: url
+                });
+            } else {
+                // Fallback: copy to clipboard
+                navigator.clipboard.writeText(`${text}\n${url}`).then(() => {
+                    alert('Race link copied to clipboard!');
+                });
+            }
         }
 
         // Initialize on page load
         document.addEventListener('DOMContentLoaded', async () => {
-            currentRaceId = getRaceIdFromUrl();
-
-            if (!currentRaceId) {
-                document.getElementById('loadingSection').innerHTML = '<p style="color: red;">Error: No race ID provided</p>';
-                return;
-            }
-
             try {
-                await loadRaceData(currentRaceId);
-                displayRaceData();
-                createRaceTrack();
-                animateRace();
+                await loadAllRaces();
+
+                if (allRaces.length === 0) {
+                    document.getElementById('loadingSection').innerHTML = '<p>No races found yet. Be the first to race!</p>';
+                    return;
+                }
+
+                displayStats();
+                displayRaces();
+
+                document.getElementById('loadingSection').style.display = 'none';
             } catch (error) {
-                document.getElementById('loadingSection').innerHTML = `<p style="color: red;">Error loading race: ${error.message}</p>`;
+                console.error('Error:', error);
+                document.getElementById('loadingSection').innerHTML = `<p style="color: red;">Error loading races: ${error.message}</p>`;
             }
         });
     </script>
