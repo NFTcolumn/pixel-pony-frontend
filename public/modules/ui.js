@@ -6,6 +6,33 @@ class UIManager {
         this.setupEventListeners();
     }
 
+    // Format large numbers (show trillions as 1000B instead of 1T)
+    formatPonyAmount(num) {
+        const absNum = Math.abs(num);
+
+        // For trillions, show as thousands of billions (e.g., 1.5T = 1500B)
+        if (absNum >= 1e12) {
+            const billions = absNum / 1e9;
+            return billions.toFixed(2) + 'B';
+        }
+        // For billions
+        else if (absNum >= 1e9) {
+            return (absNum / 1e9).toFixed(2) + 'B';
+        }
+        // For millions
+        else if (absNum >= 1e6) {
+            return (absNum / 1e6).toFixed(2) + 'M';
+        }
+        // For thousands
+        else if (absNum >= 1e3) {
+            return (absNum / 1e3).toFixed(2) + 'K';
+        }
+        // For smaller amounts
+        else {
+            return absNum.toFixed(2);
+        }
+    }
+
     // Setup event listeners
     setupEventListeners() {
         document.getElementById('connectWallet').addEventListener('click', () => window.walletManager.connectWallet());
@@ -38,15 +65,15 @@ class UIManager {
             }
             
             const betAmount = horseBets ? ethers.utils.formatEther(horseBets[i] || 0) : '0.00';
-            
+
             const isSelected = gameState.selectedBets.has(i);
             const betAmountValue = isSelected ? gameState.selectedBets.get(i).amount : 10;
-            
+
             horseDiv.innerHTML = `
                 <button class="horse-bet-remove" onclick="window.uiManager.removeBet(${i})">×</button>
                 <div class="horse-emoji"><img src="sprites/${(i % 16) + 1}.png" alt="Pony ${i + 1}" style="width: 24px; height: 24px; image-rendering: pixelated; transform: scaleX(-1);"></div>
-                <div class="horse-bets">${parseFloat(betAmount).toFixed(2)} PONY</div>
-                <input type="number" class="horse-bet-input" value="${betAmountValue}" min="1" step="0.1" 
+                <div class="horse-bets">${this.formatPonyAmount(parseFloat(betAmount))} PONY</div>
+                <input type="number" class="horse-bet-input" value="${betAmountValue}" min="1" step="0.1"
                        onchange="window.uiManager.updateBetAmount(${i}, this.value)" placeholder="Bet amount">
             `;
             

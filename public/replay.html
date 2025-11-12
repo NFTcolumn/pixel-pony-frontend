@@ -59,17 +59,24 @@
             border: 2px solid #cccccc;
             padding: 20px;
             text-align: center;
+            overflow: hidden;
+            word-wrap: break-word;
+            overflow-wrap: break-word;
         }
 
         .stat-value {
             font-size: 20px;
-            color: #ff6b6b;
+            color: #000000;
             margin: 10px 0;
+            word-wrap: break-word;
+            overflow-wrap: break-word;
         }
 
         .stat-label {
             font-size: 8px;
-            color: #666;
+            color: #000000;
+            word-wrap: break-word;
+            overflow-wrap: break-word;
         }
 
         .race-list {
@@ -254,21 +261,21 @@
             </div>
 
             <!-- Statistics -->
-            <section id="statsSection" style="display: none;">
-                <h2>📊 Race Statistics</h2>
+            <section id="statsSection" style="display: none; color: #000000;">
+                <h2 style="color: #000000;">📊 Race Statistics</h2>
                 <div class="stats-grid">
                     <div class="stat-card">
-                        <div class="stat-label">TOTAL RACES</div>
+                        <div class="stat-label" style="color: #000000;">TOTAL RACES</div>
                         <div class="stat-value" id="totalRaces">0</div>
                     </div>
                     <div class="stat-card">
-                        <div class="stat-label">UNIQUE PLAYERS</div>
+                        <div class="stat-label" style="color: #000000;">UNIQUE PLAYERS</div>
                         <div class="stat-value" id="totalPlayers">0</div>
                     </div>
                     <div class="stat-card">
-                        <div class="stat-label">TOTAL PRIZES WON</div>
+                        <div class="stat-label" style="color: #000000;">TOTAL PRIZES WON</div>
                         <div class="stat-value" id="totalPrizes">0</div>
-                        <div class="stat-label">BILLION PONY</div>
+                        <div class="stat-label" style="color: #000000;">PONY</div>
                     </div>
                 </div>
             </section>
@@ -332,6 +339,33 @@
     <script src="https://cdn.jsdelivr.net/npm/ethers@5.7.2/dist/ethers.umd.min.js"></script>
 
     <script>
+        // Format large numbers (show trillions as 1000B instead of 1T)
+        function formatPonyAmount(num) {
+            const absNum = Math.abs(num);
+
+            // For trillions, show as thousands of billions (e.g., 1.5T = 1500B)
+            if (absNum >= 1e12) {
+                const billions = absNum / 1e9;
+                return billions.toFixed(2) + 'B';
+            }
+            // For billions
+            else if (absNum >= 1e9) {
+                return (absNum / 1e9).toFixed(2) + 'B';
+            }
+            // For millions
+            else if (absNum >= 1e6) {
+                return (absNum / 1e6).toFixed(2) + 'M';
+            }
+            // For thousands
+            else if (absNum >= 1e3) {
+                return (absNum / 1e3).toFixed(2) + 'K';
+            }
+            // For smaller amounts
+            else {
+                return absNum.toFixed(2);
+            }
+        }
+
         // Contract Addresses on Base Mainnet
         const PIXEL_PONY_ADDRESS = "0x2B4652Bd6149E407E3F57190E25cdBa1FC9d37d8";
         const BASE_MAINNET_CHAIN_ID = 8453;
@@ -438,7 +472,7 @@
             return {
                 totalRaces: allRaces.length,
                 uniquePlayers: uniquePlayers,
-                totalPrizes: (totalPrizes / 1e9).toFixed(2) // Convert to billions
+                totalPrizes: totalPrizes
             };
         }
 
@@ -448,7 +482,7 @@
 
             document.getElementById('totalRaces').textContent = stats.totalRaces.toLocaleString();
             document.getElementById('totalPlayers').textContent = stats.uniquePlayers.toLocaleString();
-            document.getElementById('totalPrizes').textContent = stats.totalPrizes;
+            document.getElementById('totalPrizes').textContent = formatPonyAmount(stats.totalPrizes);
 
             document.getElementById('statsSection').style.display = 'block';
         }
@@ -468,7 +502,7 @@
                 const raceItem = document.createElement('div');
                 raceItem.className = 'race-item';
 
-                const betAmount = race.won ? (parseFloat(race.payout) / 10).toFixed(2) : parseFloat(race.payout).toFixed(2);
+                const betAmount = race.won ? parseFloat(race.payout) / 10 : parseFloat(race.payout);
                 const winnersText = race.winners.map(w => `#${w + 1}`).join(', ');
 
                 raceItem.innerHTML = `
@@ -482,8 +516,8 @@
                         <p><strong>Player:</strong> ${race.player.slice(0, 6)}...${race.player.slice(-4)}</p>
                         <p><strong>Bet on Pony:</strong> #${race.playerHorseId + 1}</p>
                         <p><strong>Winners:</strong> Ponies ${winnersText}</p>
-                        <p><strong>Bet Amount:</strong> ${betAmount}B PONY</p>
-                        ${race.won ? `<p><strong>Payout:</strong> ${parseFloat(race.payout).toFixed(2)}B PONY</p>` : ''}
+                        <p><strong>Bet Amount:</strong> ${formatPonyAmount(betAmount)} PONY</p>
+                        ${race.won ? `<p><strong>Payout:</strong> ${formatPonyAmount(parseFloat(race.payout))} PONY</p>` : ''}
                         <div style="margin-top: 12px;">
                             <button onclick="viewRaceAnimation(${allRaces.indexOf(race)})" style="font-size: 7px; padding: 4px 8px; margin-right: 8px;">🎬 Watch Replay</button>
                             <a href="https://basescan.org/tx/${race.blockNumber}" target="_blank" onclick="event.stopPropagation();">

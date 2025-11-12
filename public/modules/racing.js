@@ -346,21 +346,48 @@ class RacingManager {
         }
     }
 
+    // Format large numbers (show trillions as 1000B instead of 1T)
+    formatPonyAmount(num) {
+        const absNum = Math.abs(num);
+
+        // For trillions, show as thousands of billions (e.g., 1.5T = 1500B)
+        if (absNum >= 1e12) {
+            const billions = absNum / 1e9;
+            return billions.toFixed(2) + 'B';
+        }
+        // For billions
+        else if (absNum >= 1e9) {
+            return (absNum / 1e9).toFixed(2) + 'B';
+        }
+        // For millions
+        else if (absNum >= 1e6) {
+            return (absNum / 1e6).toFixed(2) + 'M';
+        }
+        // For thousands
+        else if (absNum >= 1e3) {
+            return (absNum / 1e3).toFixed(2) + 'K';
+        }
+        // For smaller amounts
+        else {
+            return absNum.toFixed(2);
+        }
+    }
+
     // Update user balance
     async updateUserBalance() {
         if (!gameState.ponyTokenContract || !gameState.userAddress) {
             document.getElementById('ponyBalance').textContent = 'Balance: -- PONY';
             return;
         }
-        
+
         try {
             const balance = await gameState.ponyTokenContract.balanceOf(gameState.userAddress);
             const formattedBalance = ethers.utils.formatEther(balance);
             const balanceNum = parseFloat(formattedBalance);
-            
-            document.getElementById('ponyBalance').textContent = `Balance: ${balanceNum.toFixed(2)} PONY`;
+
+            document.getElementById('ponyBalance').textContent = `Balance: ${this.formatPonyAmount(balanceNum)} PONY`;
             document.getElementById('ponyBalance').classList.remove('hidden');
-            
+
             // Check if user has insufficient PONY tokens (less than 1)
             if (balanceNum < 1) {
                 this.showNoPonyModal();
@@ -463,8 +490,8 @@ class RacingManager {
                     betsHtml.push(`
                         <div class="bet-item ${statusClass}">
                             <div>Race #${raceId} - Horse #${race.horseId}</div>
-                            <div>Bet: ${parseFloat(amount).toFixed(2)} PONY ${statusEmoji}</div>
-                            ${race.won ? `<div>Won: ${parseFloat(payout).toFixed(2)} PONY</div>` : ''}
+                            <div>Bet: ${this.formatPonyAmount(parseFloat(amount))} PONY ${statusEmoji}</div>
+                            ${race.won ? `<div>Won: ${this.formatPonyAmount(parseFloat(payout))} PONY</div>` : ''}
                         </div>
                     `);
                 } catch (error) {
@@ -494,7 +521,7 @@ class RacingManager {
             const winningNumbers = await gameState.ponyRacingContract.getCurrentJackpotNumbers();
 
             document.getElementById('jackpotAmount').textContent =
-                parseFloat(ethers.utils.formatEther(jackpotPool)).toFixed(2);
+                this.formatPonyAmount(parseFloat(ethers.utils.formatEther(jackpotPool)));
 
             const numbersHtml = winningNumbers.map(num =>
                 `<div class="number-ball">${num}</div>`
