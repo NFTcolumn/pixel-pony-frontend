@@ -6,14 +6,13 @@ class UIManager {
         this.setupEventListeners();
     }
 
-    // Format large numbers (show trillions as 1000B instead of 1T)
+    // Format large numbers (show T for trillions)
     formatPonyAmount(num) {
         const absNum = Math.abs(num);
 
-        // For trillions, show as thousands of billions (e.g., 1.5T = 1500B)
+        // For trillions
         if (absNum >= 1e12) {
-            const billions = absNum / 1e9;
-            return billions.toFixed(2) + 'B';
+            return (absNum / 1e12).toFixed(2) + 'T';
         }
         // For billions
         else if (absNum >= 1e9) {
