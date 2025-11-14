@@ -273,7 +273,7 @@
                         <div class="stat-value" id="totalPlayers">0</div>
                     </div>
                     <div class="stat-card">
-                        <div class="stat-label" style="color: #000000;">TOTAL PRIZES WON</div>
+                        <div class="stat-label" style="color: #000000;">JACKPOT</div>
                         <div class="stat-value" id="totalPrizes">0</div>
                         <div class="stat-label" style="color: #000000;">PONY</div>
                     </div>
@@ -339,25 +339,30 @@
     <script src="https://cdn.jsdelivr.net/npm/ethers@5.7.2/dist/ethers.umd.min.js"></script>
 
     <script>
-        // Format large numbers (show T for trillions)
+        // Format large numbers with proper suffixes
         function formatPonyAmount(num) {
-            const absNum = Math.abs(num);
+            // Convert to number if it's a string
+            const absNum = Math.abs(parseFloat(num));
 
-            // For trillions
+            // For trillions (1,000,000,000,000+)
             if (absNum >= 1e12) {
-                return (absNum / 1e12).toFixed(2) + 'T';
+                const value = absNum / 1e12;
+                return value.toFixed(value >= 10 ? 1 : 2) + 'T';
             }
-            // For billions
+            // For billions (1,000,000,000+)
             else if (absNum >= 1e9) {
-                return (absNum / 1e9).toFixed(2) + 'B';
+                const value = absNum / 1e9;
+                return value.toFixed(value >= 10 ? 1 : 2) + 'B';
             }
-            // For millions
+            // For millions (1,000,000+)
             else if (absNum >= 1e6) {
-                return (absNum / 1e6).toFixed(2) + 'M';
+                const value = absNum / 1e6;
+                return value.toFixed(value >= 10 ? 1 : 2) + 'M';
             }
-            // For thousands
+            // For thousands (1,000+)
             else if (absNum >= 1e3) {
-                return (absNum / 1e3).toFixed(2) + 'K';
+                const value = absNum / 1e3;
+                return value.toFixed(value >= 10 ? 1 : 2) + 'K';
             }
             // For smaller amounts
             else {
@@ -370,14 +375,17 @@
         const BASE_MAINNET_CHAIN_ID = 8453;
 
         const PIXEL_PONY_ABI = [
-            "event RaceExecuted(uint256 indexed raceId, address indexed player, uint256 horseId, uint256[3] winners, uint256 payout, bool won)"
+            "event RaceExecuted(uint256 indexed raceId, address indexed player, uint256 horseId, uint256[3] winners, uint256 payout, bool won)",
+            "function getGameStats() view returns (uint256 totalRacesCount, uint256 totalTicketsCount, uint256 jackpotAmount, uint256[4] memory jackpotNumbers)"
         ];
 
         let allRaces = [];
         let displayedRaces = 0;
-        const RACES_PER_PAGE = 20;
+        const RACES_PER_PAGE = 10;
         let currentViewingRace = null;
         let animationInterval = null;
+        let provider = null;
+        let contract = null;
 
         // Load all races from blockchain
         async function loadAllRaces() {
@@ -392,7 +400,6 @@
                     'https://mainnet.base.org'
                 ];
 
-                let provider = null;
                 let lastError = null;
 
                 // Try each RPC endpoint
@@ -416,7 +423,7 @@
                     throw new Error(`All RPC endpoints failed. Last error: ${lastError.message}`);
                 }
 
-                const contract = new ethers.Contract(PIXEL_PONY_ADDRESS, PIXEL_PONY_ABI, provider);
+                contract = new ethers.Contract(PIXEL_PONY_ADDRESS, PIXEL_PONY_ABI, provider);
 
                 // Get current block number
                 const currentBlock = await provider.getBlockNumber();
@@ -444,7 +451,7 @@
                             args.winners[1].toNumber(),
                             args.winners[2].toNumber()
                         ],
-                        payout: ethers.utils.formatUnits(args.payout, 9), // 9 decimals for PONY
+                        payout: ethers.utils.formatEther(args.payout), // 18 decimals for PONY
                         won: args.won,
                         blockNumber: event.blockNumber
                     };
@@ -461,29 +468,31 @@
             }
         }
 
-        // Calculate statistics
-        function calculateStats() {
-            const uniquePlayers = new Set(allRaces.map(r => r.player.toLowerCase())).size;
-            const totalPrizes = allRaces
-                .filter(r => r.won)
-                .reduce((sum, r) => sum + parseFloat(r.payout), 0);
-
-            return {
-                totalRaces: allRaces.length,
-                uniquePlayers: uniquePlayers,
-                totalPrizes: totalPrizes
-            };
-        }
-
         // Display statistics
-        function displayStats() {
-            const stats = calculateStats();
+        async function displayStats() {
+            try {
+                // Query contract for total races and jackpot
+                const gameStats = await contract.getGameStats();
+                const totalRacesCount = gameStats.totalRacesCount.toString();
+                const jackpotAmount = ethers.utils.formatEther(gameStats.jackpotAmount); // 18 decimals for PONY
 
-            document.getElementById('totalRaces').textContent = stats.totalRaces.toLocaleString();
-            document.getElementById('totalPlayers').textContent = stats.uniquePlayers.toLocaleString();
-            document.getElementById('totalPrizes').textContent = formatPonyAmount(stats.totalPrizes);
+                // Calculate unique players from loaded races
+                const uniquePlayers = new Set(allRaces.map(r => r.player.toLowerCase())).size;
 
-            document.getElementById('statsSection').style.display = 'block';
+                document.getElementById('totalRaces').textContent = parseInt(totalRacesCount).toLocaleString();
+                document.getElementById('totalPlayers').textContent = uniquePlayers.toLocaleString();
+                document.getElementById('totalPrizes').textContent = formatPonyAmount(parseFloat(jackpotAmount));
+
+                document.getElementById('statsSection').style.display = 'block';
+            } catch (error) {
+                console.error('Error displaying stats:', error);
+                // Fallback to showing just loaded race count
+                const uniquePlayers = new Set(allRaces.map(r => r.player.toLowerCase())).size;
+                document.getElementById('totalRaces').textContent = allRaces.length.toLocaleString();
+                document.getElementById('totalPlayers').textContent = uniquePlayers.toLocaleString();
+                document.getElementById('totalPrizes').textContent = 'N/A';
+                document.getElementById('statsSection').style.display = 'block';
+            }
         }
 
         // Display races
