@@ -1,0 +1,713 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <title>Pixel Ponies - Race & Win!</title>
+    <link rel="icon" type="image/x-icon" href="/favicon.ico">
+
+    <!-- Farcaster Mini App -->
+    <meta property="fc:frame" content="vNext" />
+    <meta property="fc:frame:manifest" content="https://pixel-pony-frontend.onrender.com/.well-known/farcaster.json" />
+
+    <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Press+Start+2P&display=swap">
+
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+            font-family: 'Press Start 2P', monospace;
+        }
+
+        body {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: #fff;
+            overflow-x: hidden;
+            min-height: 100vh;
+            padding: 10px;
+        }
+
+        .container {
+            max-width: 500px;
+            margin: 0 auto;
+        }
+
+        .header {
+            text-align: center;
+            padding: 20px 10px;
+            background: rgba(0,0,0,0.3);
+            border-radius: 10px;
+            margin-bottom: 20px;
+        }
+
+        .header h1 {
+            font-size: 18px;
+            margin-bottom: 10px;
+            text-shadow: 2px 2px 0 #000;
+        }
+
+        .wallet-info {
+            font-size: 8px;
+            padding: 8px;
+            background: rgba(255,255,255,0.1);
+            border-radius: 5px;
+            margin-top: 10px;
+        }
+
+        .jackpot-display {
+            background: linear-gradient(135deg, #f093fb 0%, #f5576c 100%);
+            padding: 20px;
+            border-radius: 10px;
+            text-align: center;
+            margin-bottom: 20px;
+            border: 3px solid #fff;
+        }
+
+        .jackpot-label {
+            font-size: 10px;
+            margin-bottom: 5px;
+        }
+
+        .jackpot-amount {
+            font-size: 24px;
+            color: #ffeb3b;
+            text-shadow: 2px 2px 0 #000;
+        }
+
+        .horse-grid {
+            display: grid;
+            grid-template-columns: repeat(4, 1fr);
+            gap: 10px;
+            margin-bottom: 20px;
+        }
+
+        .horse-card {
+            background: rgba(255,255,255,0.1);
+            border: 2px solid transparent;
+            border-radius: 8px;
+            padding: 10px;
+            text-align: center;
+            cursor: pointer;
+            transition: all 0.2s;
+        }
+
+        .horse-card:active {
+            transform: scale(0.95);
+        }
+
+        .horse-card.selected {
+            border-color: #ffeb3b;
+            background: rgba(255,235,59,0.2);
+            box-shadow: 0 0 20px rgba(255,235,59,0.5);
+        }
+
+        .horse-sprite {
+            width: 48px;
+            height: 48px;
+            margin: 0 auto 5px;
+            image-rendering: pixelated;
+        }
+
+        .horse-number {
+            font-size: 12px;
+            color: #fff;
+        }
+
+        .bet-section {
+            background: rgba(0,0,0,0.3);
+            padding: 20px;
+            border-radius: 10px;
+            margin-bottom: 20px;
+        }
+
+        .bet-label {
+            font-size: 10px;
+            margin-bottom: 10px;
+            text-align: center;
+        }
+
+        .bet-buttons {
+            display: grid;
+            grid-template-columns: repeat(3, 1fr);
+            gap: 10px;
+            margin-bottom: 15px;
+        }
+
+        .bet-btn {
+            padding: 15px;
+            background: rgba(255,255,255,0.1);
+            border: 2px solid #fff;
+            border-radius: 5px;
+            color: #fff;
+            font-size: 10px;
+            cursor: pointer;
+            transition: all 0.2s;
+        }
+
+        .bet-btn:active {
+            transform: scale(0.95);
+        }
+
+        .bet-btn.active {
+            background: #4caf50;
+            border-color: #4caf50;
+        }
+
+        .race-btn {
+            width: 100%;
+            padding: 20px;
+            background: linear-gradient(135deg, #f093fb 0%, #f5576c 100%);
+            border: 3px solid #fff;
+            border-radius: 10px;
+            color: #fff;
+            font-size: 14px;
+            cursor: pointer;
+            text-shadow: 2px 2px 0 #000;
+            transition: all 0.2s;
+            margin-bottom: 20px;
+        }
+
+        .race-btn:active {
+            transform: scale(0.98);
+        }
+
+        .race-btn:disabled {
+            opacity: 0.5;
+            cursor: not-allowed;
+        }
+
+        .status-message {
+            background: rgba(0,0,0,0.5);
+            padding: 15px;
+            border-radius: 10px;
+            text-align: center;
+            font-size: 10px;
+            line-height: 1.6;
+            margin-bottom: 20px;
+        }
+
+        .track-container {
+            background: #1a1a2e;
+            border-radius: 10px;
+            padding: 20px;
+            margin-bottom: 20px;
+            display: none;
+        }
+
+        .track-container.active {
+            display: block;
+        }
+
+        .track-lane {
+            background: linear-gradient(90deg, #2d3748 0%, #4a5568 50%, #2d3748 100%);
+            height: 24px;
+            margin: 4px 0;
+            border-radius: 5px;
+            position: relative;
+            display: flex;
+            align-items: center;
+        }
+
+        .lane-number {
+            position: absolute;
+            left: 5px;
+            color: #fff;
+            font-size: 8px;
+            z-index: 1;
+        }
+
+        .horse-racer {
+            position: absolute;
+            left: 25px;
+            width: 24px;
+            height: 24px;
+            image-rendering: pixelated;
+            transition: left 0.1s linear;
+        }
+
+        .horse-racer.winner {
+            filter: drop-shadow(0 0 8px #ffeb3b);
+        }
+
+        .horse-racer.player-horse {
+            filter: drop-shadow(0 0 8px #00ff00);
+        }
+
+        .finish-line {
+            position: absolute;
+            right: 10px;
+            top: 0;
+            bottom: 0;
+            width: 3px;
+            background: repeating-linear-gradient(45deg, #fff, #fff 8px, #000 8px, #000 16px);
+        }
+
+        .result-modal {
+            position: fixed;
+            top: 0;
+            left: 0;
+            right: 0;
+            bottom: 0;
+            background: rgba(0,0,0,0.9);
+            display: none;
+            align-items: center;
+            justify-content: center;
+            z-index: 1000;
+        }
+
+        .result-modal.active {
+            display: flex;
+        }
+
+        .result-content {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            padding: 30px;
+            border-radius: 15px;
+            text-align: center;
+            border: 3px solid #fff;
+            max-width: 90%;
+        }
+
+        .result-emoji {
+            font-size: 48px;
+            margin-bottom: 15px;
+        }
+
+        .result-title {
+            font-size: 20px;
+            margin-bottom: 15px;
+        }
+
+        .result-details {
+            font-size: 10px;
+            line-height: 1.8;
+            margin-bottom: 20px;
+        }
+
+        .close-btn {
+            padding: 15px 30px;
+            background: #fff;
+            color: #764ba2;
+            border: none;
+            border-radius: 8px;
+            font-size: 12px;
+            cursor: pointer;
+        }
+
+        .loading {
+            text-align: center;
+            padding: 20px;
+            font-size: 10px;
+        }
+
+        .spinner {
+            border: 3px solid rgba(255,255,255,0.3);
+            border-top: 3px solid #fff;
+            border-radius: 50%;
+            width: 30px;
+            height: 30px;
+            animation: spin 1s linear infinite;
+            margin: 10px auto;
+        }
+
+        @keyframes spin {
+            0% { transform: rotate(0deg); }
+            100% { transform: rotate(360deg); }
+        }
+
+        .hidden {
+            display: none;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <!-- Header -->
+        <div class="header">
+            <h1>🏇 PIXEL PONIES 🏇</h1>
+            <div id="walletInfo" class="wallet-info">Connecting wallet...</div>
+        </div>
+
+        <!-- Jackpot Display -->
+        <div class="jackpot-display">
+            <div class="jackpot-label">💰 JACKPOT 💰</div>
+            <div class="jackpot-amount" id="jackpotAmount">Loading...</div>
+            <div style="font-size: 8px; margin-top: 5px;">PONY</div>
+        </div>
+
+        <!-- Status Message -->
+        <div id="statusMessage" class="status-message">
+            Pick your pony and bet amount, then hit RACE!
+        </div>
+
+        <!-- Horse Selection -->
+        <div class="horse-grid" id="horseGrid">
+            <!-- Horses will be generated here -->
+        </div>
+
+        <!-- Bet Selection -->
+        <div class="bet-section">
+            <div class="bet-label">SELECT BET AMOUNT</div>
+            <div class="bet-buttons">
+                <button class="bet-btn" data-amount="50000000000">50B</button>
+                <button class="bet-btn" data-amount="100000000000">100B</button>
+                <button class="bet-btn" data-amount="500000000000">500B</button>
+            </div>
+        </div>
+
+        <!-- Race Button -->
+        <button class="race-btn" id="raceBtn" disabled>
+            🏁 RACE NOW! 🏁
+        </button>
+
+        <!-- Race Track -->
+        <div class="track-container" id="trackContainer">
+            <div class="finish-line"></div>
+            <div id="raceLanes"></div>
+        </div>
+
+        <!-- Result Modal -->
+        <div class="result-modal" id="resultModal">
+            <div class="result-content">
+                <div class="result-emoji" id="resultEmoji">🏆</div>
+                <div class="result-title" id="resultTitle">YOU WON!</div>
+                <div class="result-details" id="resultDetails"></div>
+                <button class="close-btn" onclick="closeResult()">RACE AGAIN</button>
+            </div>
+        </div>
+    </div>
+
+    <!-- Ethers.js -->
+    <script src="https://cdn.jsdelivr.net/npm/ethers@5.7.2/dist/ethers.umd.min.js"></script>
+
+    <!-- Farcaster SDK -->
+    <script type="module">
+        import { sdk } from 'https://esm.sh/@farcaster/miniapp-sdk';
+        window.farcasterSdk = sdk;
+
+        (async () => {
+            try {
+                await sdk.actions.ready();
+                console.log('Farcaster Mini App ready');
+            } catch (error) {
+                console.log('Not in Farcaster context');
+            }
+        })();
+    </script>
+
+    <script>
+        // Game State
+        let provider, signer, userAddress;
+        let selectedHorse = null;
+        let selectedBet = null;
+        let isRacing = false;
+
+        // Contract Details
+        const PIXEL_PONY_ADDRESS = "0x2B4652Bd6149E407E3F57190E25cdBa1FC9d37d8";
+        const PONY_TOKEN_ADDRESS = "0x6ab297799335E7b0f60d9e05439Df156cf694Ba7";
+        const BASE_CHAIN_ID = 8453;
+
+        const PIXEL_PONY_ABI = [
+            "function placeBetAndRace(uint256 _horseId, uint256 _amount) external returns (uint256)",
+            "function getGameStats() view returns (uint256 totalRacesCount, uint256 totalTicketsCount, uint256 jackpotAmount, uint256[4] memory jackpotNumbers)",
+            "event RaceExecuted(uint256 indexed raceId, address indexed player, uint256 horseId, uint256[3] winners, uint256 payout, bool won)"
+        ];
+
+        const PONY_TOKEN_ABI = [
+            "function balanceOf(address owner) view returns (uint256)",
+            "function approve(address spender, uint256 amount) returns (bool)",
+            "function allowance(address owner, address spender) view returns (uint256)"
+        ];
+
+        // Format numbers
+        function formatPony(num) {
+            const absNum = Math.abs(parseFloat(num));
+            if (absNum >= 1e12) return (absNum / 1e12).toFixed(1) + 'T';
+            if (absNum >= 1e9) return (absNum / 1e9).toFixed(1) + 'B';
+            if (absNum >= 1e6) return (absNum / 1e6).toFixed(1) + 'M';
+            if (absNum >= 1e3) return (absNum / 1e3).toFixed(1) + 'K';
+            return absNum.toFixed(2);
+        }
+
+        // Initialize
+        async function init() {
+            // Generate horse grid
+            const horseGrid = document.getElementById('horseGrid');
+            for (let i = 0; i < 16; i++) {
+                const spriteNum = (i % 30) + 1;
+                const card = document.createElement('div');
+                card.className = 'horse-card';
+                card.dataset.horse = i;
+                card.innerHTML = `
+                    <img src="sprites/${spriteNum}.png" class="horse-sprite" alt="Pony ${i+1}">
+                    <div class="horse-number">#${i+1}</div>
+                `;
+                card.onclick = () => selectHorse(i);
+                horseGrid.appendChild(card);
+            }
+
+            // Bet button handlers
+            document.querySelectorAll('.bet-btn').forEach(btn => {
+                btn.onclick = () => selectBet(btn.dataset.amount);
+            });
+
+            // Auto-connect wallet
+            await connectWallet();
+        }
+
+        // Connect Farcaster wallet
+        async function connectWallet() {
+            try {
+                updateStatus('Connecting to Farcaster wallet...');
+
+                if (!window.farcasterSdk) {
+                    throw new Error('Not in Farcaster miniapp');
+                }
+
+                const ethProvider = await window.farcasterSdk.wallet.getEthereumProvider();
+                if (!ethProvider) {
+                    throw new Error('No wallet provider');
+                }
+
+                provider = new ethers.providers.Web3Provider(ethProvider);
+
+                // Try to get accounts (already connected)
+                let accounts = await ethProvider.request({ method: 'eth_accounts' });
+
+                // If no accounts, request permission
+                if (!accounts || accounts.length === 0) {
+                    accounts = await ethProvider.request({ method: 'eth_requestAccounts' });
+                }
+
+                if (!accounts || accounts.length === 0) {
+                    throw new Error('No accounts found');
+                }
+
+                userAddress = accounts[0];
+                signer = provider.getSigner();
+
+                // Check network
+                const network = await provider.getNetwork();
+                if (network.chainId !== BASE_CHAIN_ID) {
+                    updateStatus(`⚠️ Please switch to Base network (Chain ID: ${BASE_CHAIN_ID})`);
+                    document.getElementById('walletInfo').textContent = `Wrong network: ${network.chainId}`;
+                    return;
+                }
+
+                // Update UI
+                document.getElementById('walletInfo').textContent = `${userAddress.slice(0,6)}...${userAddress.slice(-4)} | Base`;
+                updateStatus('Wallet connected! Select a pony and bet amount.');
+
+                // Load jackpot
+                await loadJackpot();
+
+            } catch (error) {
+                console.error('Wallet connection failed:', error);
+                updateStatus('❌ ' + error.message);
+                document.getElementById('walletInfo').textContent = 'Wallet not connected';
+            }
+        }
+
+        // Load jackpot amount
+        async function loadJackpot() {
+            try {
+                const contract = new ethers.Contract(PIXEL_PONY_ADDRESS, PIXEL_PONY_ABI, provider);
+                const stats = await contract.getGameStats();
+                const jackpot = ethers.utils.formatEther(stats.jackpotAmount);
+                document.getElementById('jackpotAmount').textContent = formatPony(jackpot);
+            } catch (error) {
+                console.error('Failed to load jackpot:', error);
+                document.getElementById('jackpotAmount').textContent = '???';
+            }
+        }
+
+        // Select horse
+        function selectHorse(horseId) {
+            selectedHorse = horseId;
+            document.querySelectorAll('.horse-card').forEach(card => {
+                card.classList.remove('selected');
+            });
+            document.querySelector(`[data-horse="${horseId}"]`).classList.add('selected');
+            updateRaceButton();
+        }
+
+        // Select bet
+        function selectBet(amount) {
+            selectedBet = amount;
+            document.querySelectorAll('.bet-btn').forEach(btn => {
+                btn.classList.remove('active');
+            });
+            event.target.classList.add('active');
+            updateRaceButton();
+        }
+
+        // Update race button
+        function updateRaceButton() {
+            const btn = document.getElementById('raceBtn');
+            btn.disabled = !(selectedHorse !== null && selectedBet !== null && userAddress && !isRacing);
+            if (selectedHorse !== null && selectedBet !== null) {
+                updateStatus(`Ready to race! Pony #${selectedHorse + 1} with ${formatPony(ethers.utils.formatEther(selectedBet))} PONY bet.`);
+            }
+        }
+
+        // Race
+        async function race() {
+            if (isRacing) return;
+            isRacing = true;
+
+            try {
+                updateStatus('Approving PONY tokens...');
+
+                const ponyToken = new ethers.Contract(PONY_TOKEN_ADDRESS, PONY_TOKEN_ABI, signer);
+                const pixelPony = new ethers.Contract(PIXEL_PONY_ADDRESS, PIXEL_PONY_ABI, signer);
+
+                // Check allowance
+                const allowance = await ponyToken.allowance(userAddress, PIXEL_PONY_ADDRESS);
+                if (allowance.lt(selectedBet)) {
+                    const approveTx = await ponyToken.approve(PIXEL_PONY_ADDRESS, ethers.constants.MaxUint256);
+                    updateStatus('Approving... waiting for confirmation...');
+                    await approveTx.wait();
+                }
+
+                updateStatus('🏁 Racing! Watch your pony go!');
+
+                // Show track
+                createTrack();
+
+                // Place bet and race
+                const raceTx = await pixelPony.placeBetAndRace(selectedHorse, selectedBet);
+                const receipt = await raceTx.wait();
+
+                // Get race results from event
+                const raceEvent = receipt.events.find(e => e.event === 'RaceExecuted');
+                const { raceId, winners, payout, won } = raceEvent.args;
+
+                // Animate race
+                await animateRace(winners.map(w => w.toNumber()));
+
+                // Show result
+                showResult(won, winners.map(w => w.toNumber()), ethers.utils.formatEther(payout));
+
+            } catch (error) {
+                console.error('Race failed:', error);
+                updateStatus('❌ Race failed: ' + error.message);
+            } finally {
+                isRacing = false;
+                updateRaceButton();
+            }
+        }
+
+        // Create track
+        function createTrack() {
+            const container = document.getElementById('trackContainer');
+            const lanes = document.getElementById('raceLanes');
+            lanes.innerHTML = '';
+
+            for (let i = 0; i < 16; i++) {
+                const spriteNum = (i % 30) + 1;
+                const lane = document.createElement('div');
+                lane.className = 'track-lane';
+                lane.innerHTML = `
+                    <span class="lane-number">#${i+1}</span>
+                    <img src="sprites/${spriteNum}.png" class="horse-racer ${i === selectedHorse ? 'player-horse' : ''}" id="racer-${i}">
+                `;
+                lanes.appendChild(lane);
+            }
+
+            container.classList.add('active');
+        }
+
+        // Animate race
+        function animateRace(winners) {
+            return new Promise(resolve => {
+                const trackWidth = document.getElementById('trackContainer').offsetWidth - 60;
+                const duration = 3000;
+                const fps = 60;
+                const frames = (duration / 1000) * fps;
+
+                const positions = [];
+                for (let i = 0; i < 16; i++) {
+                    positions[i] = { current: 0, target: trackWidth };
+                }
+
+                // Set winner finish times
+                winners.forEach((winnerId, place) => {
+                    const finishTime = frames - ((2 - place) * 20);
+                    positions[winnerId].finishTime = finishTime;
+                });
+
+                let frame = 0;
+                const interval = setInterval(() => {
+                    for (let i = 0; i < 16; i++) {
+                        const horse = document.getElementById(`racer-${i}`);
+                        if (!horse) continue;
+
+                        const finishTime = positions[i].finishTime || frames;
+                        const progress = Math.min(frame / finishTime, 1);
+                        const position = trackWidth * progress;
+
+                        horse.style.left = position + 'px';
+
+                        if (progress >= 1 && winners.includes(i)) {
+                            horse.classList.add('winner');
+                        }
+                    }
+
+                    frame++;
+                    if (frame >= frames + 30) {
+                        clearInterval(interval);
+                        resolve();
+                    }
+                }, 1000 / fps);
+            });
+        }
+
+        // Show result
+        function showResult(won, winners, payout) {
+            const modal = document.getElementById('resultModal');
+            const emoji = document.getElementById('resultEmoji');
+            const title = document.getElementById('resultTitle');
+            const details = document.getElementById('resultDetails');
+
+            if (won) {
+                emoji.textContent = '🎉';
+                title.textContent = 'YOU WON!';
+                details.innerHTML = `
+                    <div>Your Pony: #${selectedHorse + 1}</div>
+                    <div>Winners: ${winners.map(w => '#' + (w + 1)).join(', ')}</div>
+                    <div style="margin-top: 10px; font-size: 16px; color: #ffeb3b;">+${formatPony(payout)} PONY</div>
+                `;
+            } else {
+                emoji.textContent = '😢';
+                title.textContent = 'TRY AGAIN!';
+                details.innerHTML = `
+                    <div>Your Pony: #${selectedHorse + 1}</div>
+                    <div>Winners: ${winners.map(w => '#' + (w + 1)).join(', ')}</div>
+                    <div style="margin-top: 10px;">Better luck next race!</div>
+                `;
+            }
+
+            modal.classList.add('active');
+        }
+
+        // Close result
+        function closeResult() {
+            document.getElementById('resultModal').classList.remove('active');
+            document.getElementById('trackContainer').classList.remove('active');
+            loadJackpot();
+        }
+
+        // Update status
+        function updateStatus(message) {
+            document.getElementById('statusMessage').textContent = message;
+        }
+
+        // Race button handler
+        document.getElementById('raceBtn').onclick = race;
+
+        // Initialize on load
+        document.addEventListener('DOMContentLoaded', init);
+    </script>
+</body>
+</html>
