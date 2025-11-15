@@ -6,14 +6,52 @@ class WalletManager {
         this.setupEventListeners();
     }
 
+    // Check if running in Farcaster miniapp
+    isFarcasterMiniapp() {
+        return typeof window.farcasterSdk !== 'undefined';
+    }
+
+    // Get Farcaster wallet provider
+    async getFarcasterProvider() {
+        try {
+            if (!window.farcasterSdk) {
+                console.log('Farcaster SDK not available');
+                return null;
+            }
+
+            console.log('✅ Farcaster miniapp detected, using SDK wallet');
+
+            // Farcaster provides an EIP-1193 compatible provider
+            const provider = await window.farcasterSdk.wallet.ethProvider;
+            if (provider) {
+                console.log('✅ Farcaster wallet provider obtained');
+                return provider;
+            }
+
+            console.log('❌ Farcaster wallet provider not available');
+            return null;
+        } catch (error) {
+            console.error('Error getting Farcaster provider:', error);
+            return null;
+        }
+    }
+
     // Detect available wallet provider with modern wallet support
     async detectWalletProvider() {
         console.log('=== WALLET DETECTION DEBUG ===');
-        
+
+        // First check if running in Farcaster miniapp
+        if (this.isFarcasterMiniapp()) {
+            const farcasterProvider = await this.getFarcasterProvider();
+            if (farcasterProvider) {
+                return farcasterProvider;
+            }
+        }
+
         // Wait for wallet injection with multiple attempts
         for (let attempt = 0; attempt < 3; attempt++) {
             await new Promise(resolve => setTimeout(resolve, attempt * 500));
-            
+
             console.log(`Attempt ${attempt + 1}:`);
             console.log('window.ethereum exists:', typeof window.ethereum !== 'undefined');
             
@@ -118,25 +156,32 @@ class WalletManager {
         try {
             const network = await gameState.provider.getNetwork();
             console.log('Connected to network:', network.chainId);
-            
-            // For development, accept common test networks
+
+            // Accept Base mainnet and test networks
             const acceptedChainIds = [
+                8453,     // Base Mainnet (PRIMARY NETWORK FOR THIS GAME)
+                84532,    // Base Sepolia Testnet
                 1,        // Ethereum Mainnet
                 5,        // Goerli
-                11155111, // Ethereum Sepolia (MAIN NETWORK FOR THIS GAME)
+                11155111, // Ethereum Sepolia
                 1337,     // Hardhat
                 31337     // Hardhat alternate
             ];
-            
+
             if (!acceptedChainIds.includes(network.chainId)) {
                 if (network.chainId === 1) {
-                    this.showError(`You're on Ethereum Mainnet. Please switch to Ethereum Sepolia to play!`);
+                    this.showError(`You're on Ethereum Mainnet. Please switch to Base Network to play!`);
                 } else {
-                    this.showError(`Unsupported network (Chain ID: ${network.chainId}). Please switch to Ethereum Sepolia (11155111).`);
+                    this.showError(`Unsupported network (Chain ID: ${network.chainId}). Please switch to Base Network (8453).`);
                 }
                 return false;
             }
-            
+
+            // Warn if not on Base mainnet but allow to continue
+            if (network.chainId !== 8453) {
+                console.warn(`⚠️ Not on Base mainnet (8453). Current chain: ${network.chainId}`);
+            }
+
             return true;
         } catch (error) {
             console.error('Network check failed:', error);
@@ -235,23 +280,43 @@ class WalletManager {
 
     // Show wallet installation message
     showWalletInstallationMessage() {
-        const installMessage = `
-            <div style="text-align: center; padding: 16px;">
-                <h3>No Crypto Wallet Detected</h3>
-                <p>Having trouble? Try these steps:</p>
-                <div style="margin: 16px 0;">
+        // Check if in Farcaster miniapp
+        if (this.isFarcasterMiniapp()) {
+            const farcasterMessage = `
+                <div style="text-align: center; padding: 16px;">
+                    <h3>Connect Your Wallet</h3>
+                    <p>To play Pixel Ponies with real bets:</p>
+                    <ol style="text-align: left; margin: 16px auto; max-width: 300px; font-size: 8px;">
+                        <li>Make sure you have a wallet connected in Warpcast settings</li>
+                        <li>Ensure your wallet is on Base network (Chain ID: 8453)</li>
+                        <li>Click "Connect Wallet" again</li>
+                    </ol>
                     <button onclick="window.walletManager.retryWalletConnection()" class="wallet-install-btn">
                         🔄 Retry Connection
                     </button>
-                    <button onclick="window.open('https://metamask.io/', '_blank')" class="wallet-install-btn">
-                        Install MetaMask
-                    </button>
+                    <p style="font-size: 6px; margin: 8px 0;">You can still play in demo mode!</p>
                 </div>
-                <p style="font-size: 6px; margin: 8px 0;">If you have MetaMask installed, try refreshing the page or clicking Retry.</p>
-                <p>You can still play in demo mode!</p>
-            </div>
-        `;
-        this.showMessage(installMessage);
+            `;
+            this.showMessage(farcasterMessage);
+        } else {
+            const installMessage = `
+                <div style="text-align: center; padding: 16px;">
+                    <h3>No Crypto Wallet Detected</h3>
+                    <p>Having trouble? Try these steps:</p>
+                    <div style="margin: 16px 0;">
+                        <button onclick="window.walletManager.retryWalletConnection()" class="wallet-install-btn">
+                            🔄 Retry Connection
+                        </button>
+                        <button onclick="window.open('https://metamask.io/', '_blank')" class="wallet-install-btn">
+                            Install MetaMask
+                        </button>
+                    </div>
+                    <p style="font-size: 6px; margin: 8px 0;">If you have MetaMask installed, try refreshing the page or clicking Retry.</p>
+                    <p>You can still play in demo mode!</p>
+                </div>
+            `;
+            this.showMessage(installMessage);
+        }
     }
 
     // Retry wallet connection
