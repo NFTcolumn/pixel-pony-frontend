@@ -738,13 +738,33 @@
         import { sdk } from 'https://esm.sh/@farcaster/miniapp-sdk';
         window.farcasterSdk = sdk;
 
-        // Call ready() to hide loading screen
+        // Initialize Farcaster SDK
         (async () => {
             try {
+                console.log('=== FARCASTER SDK INITIALIZATION ===');
+                console.log('SDK loaded:', !!sdk);
+                console.log('SDK wallet available:', !!sdk.wallet);
+                console.log('SDK wallet methods:', Object.keys(sdk.wallet || {}));
+
+                // Get context to check capabilities
+                const context = await sdk.context;
+                console.log('Farcaster context:', context);
+                console.log('User FID:', context.user?.fid);
+
+                // Call ready() to hide loading screen
                 await sdk.actions.ready();
-                console.log('Farcaster Mini App ready');
+                console.log('✅ Farcaster Mini App ready');
+
+                // Try to get wallet provider early
+                if (sdk.wallet && typeof sdk.wallet.getEthereumProvider === 'function') {
+                    const provider = await sdk.wallet.getEthereumProvider();
+                    console.log('Early wallet provider check:', !!provider);
+                    if (provider) {
+                        console.log('Provider has request method:', typeof provider.request === 'function');
+                    }
+                }
             } catch (error) {
-                console.log('Not running in Farcaster context, skipping ready()');
+                console.log('Not running in Farcaster context or error:', error);
             }
         })();
     </script>

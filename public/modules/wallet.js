@@ -21,10 +21,23 @@ class WalletManager {
 
             console.log('✅ Farcaster miniapp detected, using SDK wallet');
 
-            // Farcaster provides an EIP-1193 compatible provider
-            const provider = await window.farcasterSdk.wallet.ethProvider;
+            // Check if wallet capability is supported
+            const capabilities = await window.farcasterSdk.context;
+            console.log('Farcaster capabilities:', capabilities);
+
+            // Farcaster provides an EIP-1193 compatible provider via getEthereumProvider() method
+            if (typeof window.farcasterSdk.wallet.getEthereumProvider !== 'function') {
+                console.log('❌ getEthereumProvider not available');
+                return null;
+            }
+
+            const provider = await window.farcasterSdk.wallet.getEthereumProvider();
             if (provider) {
                 console.log('✅ Farcaster wallet provider obtained');
+                console.log('Provider details:', {
+                    hasRequest: typeof provider.request === 'function',
+                    hasOn: typeof provider.on === 'function'
+                });
                 return provider;
             }
 
@@ -32,6 +45,7 @@ class WalletManager {
             return null;
         } catch (error) {
             console.error('Error getting Farcaster provider:', error);
+            console.error('Error details:', error.message, error.stack);
             return null;
         }
     }
