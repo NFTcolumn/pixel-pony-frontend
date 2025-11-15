@@ -380,9 +380,12 @@
             </div>
         </div>
 
-        <!-- Race Button -->
-        <button class="race-btn" id="raceBtn" disabled>
-            🏁 RACE NOW! 🏁
+        <!-- Action Buttons -->
+        <button class="race-btn" id="approveBtn" disabled>
+            ✅ APPROVE PONY
+        </button>
+        <button class="race-btn" id="raceBtn" disabled style="margin-top: 10px;">
+            🏁 PLACE BET & RACE! 🏁
         </button>
 
         <!-- Race Track -->
@@ -574,18 +577,23 @@
             updateRaceButton();
         }
 
-        // Update race button
+        // Update race buttons
         function updateRaceButton() {
-            const btn = document.getElementById('raceBtn');
-            btn.disabled = !(selectedHorse !== null && selectedBet !== null && userAddress && !isRacing);
+            const approveBtn = document.getElementById('approveBtn');
+            const raceBtn = document.getElementById('raceBtn');
+            const canInteract = selectedHorse !== null && selectedBet !== null && userAddress && !isRacing;
+
+            approveBtn.disabled = !canInteract;
+            raceBtn.disabled = !canInteract;
+
             if (selectedHorse !== null && selectedBet !== null) {
                 const betInPony = parseFloat(ethers.utils.formatEther(selectedBet));
-                updateStatus(`Ready to race! Pony #${selectedHorse + 1} with ${formatPony(betInPony)} PONY bet.`);
+                updateStatus(`Step 1: Approve PONY | Step 2: Place bet and race! Pony #${selectedHorse + 1} with ${formatPony(betInPony)} PONY bet.`);
             }
         }
 
-        // Race
-        async function race() {
+        // Approve PONY tokens
+        async function approvePony() {
             if (isRacing) return;
             isRacing = true;
 
@@ -593,15 +601,34 @@
                 updateStatus('Approving PONY tokens...');
 
                 const ponyToken = new ethers.Contract(PONY_TOKEN_ADDRESS, PONY_TOKEN_ABI, signer);
-                const pixelPony = new ethers.Contract(PIXEL_PONY_ADDRESS, PIXEL_PONY_ABI, signer);
 
-                // Check allowance
-                const allowance = await ponyToken.allowance(userAddress, PIXEL_PONY_ADDRESS);
-                if (allowance.lt(selectedBet)) {
-                    const approveTx = await ponyToken.approve(PIXEL_PONY_ADDRESS, ethers.constants.MaxUint256);
-                    updateStatus('Approving... waiting for confirmation...');
-                    await approveTx.wait();
-                }
+                // Approve unlimited amount
+                const approveTx = await ponyToken.approve(PIXEL_PONY_ADDRESS, ethers.constants.MaxUint256);
+                updateStatus('Approving... waiting for confirmation...');
+                await approveTx.wait();
+
+                updateStatus('✅ PONY approved! Now click "PLACE BET & RACE" to start!');
+
+            } catch (error) {
+                console.error('Approval failed:', error);
+                let errorMsg = error.message;
+                if (error.reason) errorMsg = error.reason;
+                if (error.data && error.data.message) errorMsg = error.data.message;
+                updateStatus('❌ Approval failed: ' + errorMsg);
+                alert('Approval Error: ' + errorMsg);
+            } finally {
+                isRacing = false;
+                updateRaceButton();
+            }
+        }
+
+        // Place bet and race
+        async function race() {
+            if (isRacing) return;
+            isRacing = true;
+
+            try {
+                const pixelPony = new ethers.Contract(PIXEL_PONY_ADDRESS, PIXEL_PONY_ABI, signer);
 
                 updateStatus('🏁 Racing! Watch your pony go!');
 
@@ -748,7 +775,8 @@
             document.getElementById('statusMessage').textContent = message;
         }
 
-        // Race button handler
+        // Button handlers
+        document.getElementById('approveBtn').onclick = approvePony;
         document.getElementById('raceBtn').onclick = race;
 
         // Initialize on load
