@@ -26,34 +26,48 @@ class WalletManager {
 
             debug('✅ Farcaster miniapp detected');
 
-            // Check if wallet capability is supported
-            const capabilities = await window.farcasterSdk.context;
-            console.log('Farcaster capabilities:', capabilities);
+            // Get context and check user info
+            const context = await window.farcasterSdk.context;
+            debug('User FID: ' + (context.user?.fid || 'none'));
+            console.log('Farcaster context:', context);
 
-            // Farcaster provides an EIP-1193 compatible provider via getEthereumProvider() method
-            if (typeof window.farcasterSdk.wallet.getEthereumProvider !== 'function') {
-                debug('❌ getEthereumProvider not available', true);
+            // Check if wallet is available in SDK
+            if (!window.farcasterSdk.wallet) {
+                debug('❌ SDK.wallet not available', true);
                 return null;
             }
 
-            debug('Getting wallet provider...');
+            // Check wallet methods available
+            const walletMethods = Object.keys(window.farcasterSdk.wallet);
+            debug('Wallet methods: ' + walletMethods.join(', '));
+
+            // Farcaster provides an EIP-1193 compatible provider via getEthereumProvider() method
+            if (typeof window.farcasterSdk.wallet.getEthereumProvider !== 'function') {
+                debug('❌ getEthereumProvider not a function', true);
+                return null;
+            }
+
+            debug('Calling getEthereumProvider()...');
             const provider = await window.farcasterSdk.wallet.getEthereumProvider();
 
             if (provider) {
                 debug('✅ Wallet provider obtained');
+                debug('Provider type: ' + typeof provider);
                 console.log('Provider details:', {
                     hasRequest: typeof provider.request === 'function',
-                    hasOn: typeof provider.on === 'function'
+                    hasOn: typeof provider.on === 'function',
+                    isConnected: typeof provider.isConnected === 'function' ? provider.isConnected() : 'unknown'
                 });
                 return provider;
             }
 
-            debug('❌ Wallet provider returned null', true);
+            debug('❌ Provider is null/undefined', true);
+            debug('Need wallet in Warpcast settings?', true);
             return null;
         } catch (error) {
             debug('❌ Error: ' + error.message, true);
             console.error('Error getting Farcaster provider:', error);
-            console.error('Error details:', error.message, error.stack);
+            console.error('Error stack:', error.stack);
             return null;
         }
     }
@@ -306,17 +320,19 @@ class WalletManager {
         if (this.isFarcasterMiniapp()) {
             const farcasterMessage = `
                 <div style="text-align: center; padding: 16px;">
-                    <h3>Connect Your Wallet</h3>
-                    <p>To play Pixel Ponies with real bets:</p>
-                    <ol style="text-align: left; margin: 16px auto; max-width: 300px; font-size: 8px;">
-                        <li>Make sure you have a wallet connected in Warpcast settings</li>
-                        <li>Ensure your wallet is on Base network (Chain ID: 8453)</li>
-                        <li>Click "Connect Wallet" again</li>
+                    <h3>🔐 Wallet Setup Required</h3>
+                    <p style="font-size: 10px; margin: 10px 0;">To play with real bets, connect a wallet in Warpcast:</p>
+                    <ol style="text-align: left; margin: 16px auto; max-width: 320px; font-size: 9px; line-height: 1.6;">
+                        <li><strong>Open Warpcast Settings</strong> (Profile → Settings)</li>
+                        <li><strong>Go to "Wallets"</strong> section</li>
+                        <li><strong>Connect a wallet</strong> (Coinbase Wallet, Rainbow, etc.)</li>
+                        <li><strong>Make sure it's on Base network</strong> (Chain ID: 8453)</li>
+                        <li><strong>Return here and click Retry</strong></li>
                     </ol>
                     <button onclick="window.walletManager.retryWalletConnection()" class="wallet-install-btn">
                         🔄 Retry Connection
                     </button>
-                    <p style="font-size: 6px; margin: 8px 0;">You can still play in demo mode!</p>
+                    <p style="font-size: 7px; margin: 8px 0; color: #666;">Or continue in demo mode with fake bets!</p>
                 </div>
             `;
             this.showMessage(farcasterMessage);
