@@ -168,13 +168,39 @@ class WalletManager {
     }
 
     // Request account access with proper error handling
-    async requestAccountAccess(walletProvider) {
+    async requestAccountAccess(walletProvider, isFarcaster = false) {
+        const debug = (msg, isError = false) => {
+            console.log(msg);
+            if (window.showMobileDebug) window.showMobileDebug(msg, isError);
+        };
+
         try {
-            const accounts = await walletProvider.request({ 
-                method: 'eth_requestAccounts' 
+            // For Farcaster, try eth_accounts first (no permission needed if already connected)
+            if (isFarcaster) {
+                try {
+                    debug('Checking if already connected...');
+                    const existingAccounts = await walletProvider.request({
+                        method: 'eth_accounts'
+                    });
+                    if (existingAccounts && existingAccounts.length > 0) {
+                        debug('✅ Already connected: ' + existingAccounts[0].slice(0, 10) + '...');
+                        return existingAccounts;
+                    }
+                    debug('No existing connection, requesting...');
+                } catch (e) {
+                    console.log('eth_accounts check failed, trying eth_requestAccounts:', e);
+                }
+            }
+
+            // Request new connection
+            debug('Calling eth_requestAccounts...');
+            const accounts = await walletProvider.request({
+                method: 'eth_requestAccounts'
             });
+            debug('✅ Got accounts: ' + (accounts?.length || 0));
             return accounts;
         } catch (error) {
+            debug('❌ Account request failed: ' + error.message, true);
             if (error.code === 4001) {
                 this.showError('Please connect your wallet to continue');
                 return null;
@@ -230,14 +256,15 @@ class WalletManager {
     async connectWallet() {
         try {
             // Check for wallet availability
+            const isFarcaster = this.isFarcasterMiniapp();
             const walletProvider = await this.detectWalletProvider();
             if (!walletProvider) {
                 this.showWalletInstallationMessage();
                 return;
             }
-            
+
             // Request account access with better error handling
-            const accounts = await this.requestAccountAccess(walletProvider);
+            const accounts = await this.requestAccountAccess(walletProvider, isFarcaster);
             if (!accounts || accounts.length === 0) {
                 this.showError('No accounts found. Please make sure your wallet is unlocked.');
                 return;
