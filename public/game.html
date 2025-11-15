@@ -763,8 +763,28 @@
                         console.log('Provider has request method:', typeof provider.request === 'function');
                     }
                 }
+
+                // Show debug info on mobile
+                window.showMobileDebug = (message, isError = false) => {
+                    let debugPanel = document.getElementById('mobileDebug');
+                    if (!debugPanel) {
+                        debugPanel = document.createElement('div');
+                        debugPanel.id = 'mobileDebug';
+                        debugPanel.style.cssText = 'position: fixed; top: 60px; left: 10px; right: 10px; background: rgba(0,0,0,0.9); color: #0f0; padding: 10px; font-size: 10px; font-family: monospace; max-height: 200px; overflow-y: auto; z-index: 10000; border: 2px solid #0f0;';
+                        document.body.appendChild(debugPanel);
+                    }
+                    const timestamp = new Date().toLocaleTimeString();
+                    const color = isError ? '#f00' : '#0f0';
+                    debugPanel.innerHTML += `<div style="color: ${color};">[${timestamp}] ${message}</div>`;
+                    debugPanel.scrollTop = debugPanel.scrollHeight;
+                };
+
+                window.showMobileDebug('✅ Farcaster SDK initialized');
             } catch (error) {
                 console.log('Not running in Farcaster context or error:', error);
+                if (window.showMobileDebug) {
+                    window.showMobileDebug('❌ SDK Error: ' + error.message, true);
+                }
             }
         })();
     </script>

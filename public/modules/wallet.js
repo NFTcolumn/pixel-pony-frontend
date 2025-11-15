@@ -13,13 +13,18 @@ class WalletManager {
 
     // Get Farcaster wallet provider
     async getFarcasterProvider() {
+        const debug = (msg, isError = false) => {
+            console.log(msg);
+            if (window.showMobileDebug) window.showMobileDebug(msg, isError);
+        };
+
         try {
             if (!window.farcasterSdk) {
-                console.log('Farcaster SDK not available');
+                debug('❌ Farcaster SDK not available', true);
                 return null;
             }
 
-            console.log('✅ Farcaster miniapp detected, using SDK wallet');
+            debug('✅ Farcaster miniapp detected');
 
             // Check if wallet capability is supported
             const capabilities = await window.farcasterSdk.context;
@@ -27,13 +32,15 @@ class WalletManager {
 
             // Farcaster provides an EIP-1193 compatible provider via getEthereumProvider() method
             if (typeof window.farcasterSdk.wallet.getEthereumProvider !== 'function') {
-                console.log('❌ getEthereumProvider not available');
+                debug('❌ getEthereumProvider not available', true);
                 return null;
             }
 
+            debug('Getting wallet provider...');
             const provider = await window.farcasterSdk.wallet.getEthereumProvider();
+
             if (provider) {
-                console.log('✅ Farcaster wallet provider obtained');
+                debug('✅ Wallet provider obtained');
                 console.log('Provider details:', {
                     hasRequest: typeof provider.request === 'function',
                     hasOn: typeof provider.on === 'function'
@@ -41,9 +48,10 @@ class WalletManager {
                 return provider;
             }
 
-            console.log('❌ Farcaster wallet provider not available');
+            debug('❌ Wallet provider returned null', true);
             return null;
         } catch (error) {
+            debug('❌ Error: ' + error.message, true);
             console.error('Error getting Farcaster provider:', error);
             console.error('Error details:', error.message, error.stack);
             return null;
