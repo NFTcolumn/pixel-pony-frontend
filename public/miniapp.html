@@ -538,7 +538,7 @@
             try {
                 const contract = new ethers.Contract(PIXEL_PONY_ADDRESS, PIXEL_PONY_ABI, provider);
                 const stats = await contract.getGameStats();
-                const jackpot = ethers.utils.formatEther(stats.jackpotAmount);
+                const jackpot = parseFloat(ethers.utils.formatEther(stats.jackpotAmount)) / 1e9;
                 document.getElementById('jackpotAmount').textContent = formatPony(jackpot);
             } catch (error) {
                 console.error('Failed to load jackpot:', error);
