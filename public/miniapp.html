@@ -433,8 +433,9 @@
         const BASE_CHAIN_ID = 8453;
 
         const PIXEL_PONY_ABI = [
-            "function placeBetAndRace(uint256 _horseId, uint256 _amount) external returns (uint256)",
+            "function placeBetAndRace(uint256 _horseId, uint256 _amount) external payable returns (uint256)",
             "function getGameStats() view returns (uint256 totalRacesCount, uint256 totalTicketsCount, uint256 jackpotAmount, uint256[4] memory jackpotNumbers)",
+            "function baseFeeAmount() view returns (uint256)",
             "event RaceExecuted(uint256 indexed raceId, address indexed player, uint256 horseId, uint256[3] winners, uint256 payout, bool won)"
         ];
 
@@ -607,8 +608,14 @@
                 // Show track
                 createTrack();
 
-                // Place bet and race
-                const raceTx = await pixelPony.placeBetAndRace(selectedHorse, selectedBet);
+                // Get base fee (ETH required for race)
+                const baseFee = await pixelPony.baseFeeAmount();
+
+                // Place bet and race (send ETH as baseFee)
+                const raceTx = await pixelPony.placeBetAndRace(selectedHorse, selectedBet, {
+                    value: baseFee,
+                    gasLimit: 1000000
+                });
                 const receipt = await raceTx.wait();
 
                 // Get race results from event
