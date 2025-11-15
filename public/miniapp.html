@@ -602,8 +602,16 @@
 
                 const ponyToken = new ethers.Contract(PONY_TOKEN_ADDRESS, PONY_TOKEN_ABI, signer);
 
-                // Approve unlimited amount
-                const approveTx = await ponyToken.approve(PIXEL_PONY_ADDRESS, ethers.constants.MaxUint256);
+                // Get current gas price
+                const gasPrice = await provider.getGasPrice();
+                const gasPriceWithBuffer = gasPrice.mul(120).div(100); // 20% buffer
+
+                // Approve unlimited amount with explicit gas parameters
+                const approveTx = await ponyToken.approve(PIXEL_PONY_ADDRESS, ethers.constants.MaxUint256, {
+                    gasLimit: 100000,
+                    maxPriorityFeePerGas: gasPriceWithBuffer,
+                    maxFeePerGas: gasPriceWithBuffer.mul(2)
+                });
                 updateStatus('Approving... waiting for confirmation...');
                 await approveTx.wait();
 
@@ -638,10 +646,16 @@
                 // Get base fee (ETH required for race)
                 const baseFee = await pixelPony.baseFeeAmount();
 
+                // Get current gas price
+                const gasPrice = await provider.getGasPrice();
+                const gasPriceWithBuffer = gasPrice.mul(120).div(100); // 20% buffer
+
                 // Place bet and race (send ETH as baseFee)
                 const raceTx = await pixelPony.placeBetAndRace(selectedHorse, selectedBet, {
                     value: baseFee,
-                    gasLimit: 1000000
+                    gasLimit: 1000000,
+                    maxPriorityFeePerGas: gasPriceWithBuffer,
+                    maxFeePerGas: gasPriceWithBuffer.mul(2)
                 });
                 const receipt = await raceTx.wait();
 
