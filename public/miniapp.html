@@ -351,6 +351,12 @@
             <img src="logo.png" alt="Pixel Ponies Logo">
             <div class="tagline">16 PIXELATED PONIES RACING ON-CHAIN FOR NO REASON</div>
             <div id="walletInfo" class="wallet-info">Connecting wallet...</div>
+            <div id="balanceInfo" class="wallet-info" style="display: none; margin-top: 5px; background: #e8f5e9;">
+                <div style="display: flex; justify-content: space-around;">
+                    <span>💰 <span id="ethBalance">0</span> ETH</span>
+                    <span>🐴 <span id="ponyBalance">0</span> PONY</span>
+                </div>
+            </div>
         </div>
 
         <!-- Jackpot Display -->
@@ -380,12 +386,9 @@
             </div>
         </div>
 
-        <!-- Action Buttons -->
-        <button class="race-btn" id="approveBtn" disabled>
-            ✅ APPROVE PONY
-        </button>
-        <button class="race-btn" id="raceBtn" disabled style="margin-top: 10px;">
-            🏁 PLACE BET & RACE! 🏁
+        <!-- Action Button -->
+        <button class="race-btn" id="raceBtn" disabled>
+            🏁 APPROVE & RACE! 🏁
         </button>
 
         <!-- Race Track -->
@@ -533,10 +536,37 @@
                 document.getElementById('walletInfo').textContent = `${userAddress.slice(0,6)}...${userAddress.slice(-4)} | Base`;
                 updateStatus('Wallet connected! Select a pony and bet amount.');
 
+                // Load and display balances
+                await loadBalances();
+
             } catch (error) {
                 console.error('Wallet connection failed:', error);
                 updateStatus('❌ ' + error.message);
                 document.getElementById('walletInfo').textContent = 'Wallet not connected';
+            }
+        }
+
+        // Load user balances
+        async function loadBalances() {
+            try {
+                if (!userAddress || !provider) return;
+
+                // Get ETH balance
+                const ethBalance = await provider.getBalance(userAddress);
+                const ethFormatted = parseFloat(ethers.utils.formatEther(ethBalance)).toFixed(4);
+
+                // Get PONY balance
+                const ponyToken = new ethers.Contract(PONY_TOKEN_ADDRESS, PONY_TOKEN_ABI, provider);
+                const ponyBalance = await ponyToken.balanceOf(userAddress);
+                const ponyFormatted = formatPony(ethers.utils.formatEther(ponyBalance));
+
+                // Update UI
+                document.getElementById('ethBalance').textContent = ethFormatted;
+                document.getElementById('ponyBalance').textContent = ponyFormatted;
+                document.getElementById('balanceInfo').style.display = 'block';
+
+            } catch (error) {
+                console.error('Failed to load balances:', error);
             }
         }
 
@@ -577,110 +607,149 @@
             updateRaceButton();
         }
 
-        // Update race buttons
-        function updateRaceButton() {
-            const approveBtn = document.getElementById('approveBtn');
+        // Update race button
+        async function updateRaceButton() {
             const raceBtn = document.getElementById('raceBtn');
             const canInteract = selectedHorse !== null && selectedBet !== null && userAddress && !isRacing;
 
-            approveBtn.disabled = !canInteract;
             raceBtn.disabled = !canInteract;
 
             if (selectedHorse !== null && selectedBet !== null) {
                 const betInPony = parseFloat(ethers.utils.formatEther(selectedBet));
-                updateStatus(`Step 1: Approve PONY | Step 2: Place bet and race! Pony #${selectedHorse + 1} with ${formatPony(betInPony)} PONY bet.`);
+
+                // Check if user has enough PONY and ETH
+                if (userAddress && provider) {
+                    try {
+                        const ponyToken = new ethers.Contract(PONY_TOKEN_ADDRESS, PONY_TOKEN_ABI, provider);
+                        const ponyBalance = await ponyToken.balanceOf(userAddress);
+                        const ethBalance = await provider.getBalance(userAddress);
+
+                        const pixelPony = new ethers.Contract(PIXEL_PONY_ADDRESS, PIXEL_PONY_ABI, provider);
+                        const baseFee = await pixelPony.baseFeeAmount();
+
+                        const hasEnoughPony = ponyBalance.gte(selectedBet);
+                        const hasEnoughEth = ethBalance.gte(baseFee);
+
+                        if (!hasEnoughPony) {
+                            updateStatus(`❌ Insufficient PONY! Need ${formatPony(betInPony)} PONY, have ${formatPony(ethers.utils.formatEther(ponyBalance))}`);
+                            raceBtn.disabled = true;
+                            return;
+                        }
+
+                        if (!hasEnoughEth) {
+                            const ethNeeded = parseFloat(ethers.utils.formatEther(baseFee)).toFixed(6);
+                            const ethHave = parseFloat(ethers.utils.formatEther(ethBalance)).toFixed(6);
+                            updateStatus(`❌ Insufficient ETH for race fee! Need ${ethNeeded} ETH, have ${ethHave} ETH`);
+                            raceBtn.disabled = true;
+                            return;
+                        }
+
+                        updateStatus(`Ready! Pony #${selectedHorse + 1} with ${formatPony(betInPony)} PONY bet. One button does it all!`);
+                    } catch (error) {
+                        console.error('Balance check failed:', error);
+                    }
+                }
             }
         }
 
-        // Approve PONY tokens
-        async function approvePony() {
-            if (isRacing) return;
-            isRacing = true;
-
-            try {
-                updateStatus('Approving PONY tokens...');
-
-                const ponyToken = new ethers.Contract(PONY_TOKEN_ADDRESS, PONY_TOKEN_ABI, signer);
-
-                // Get current gas price
-                const gasPrice = await provider.getGasPrice();
-                const gasPriceWithBuffer = gasPrice.mul(120).div(100); // 20% buffer
-
-                // Approve unlimited amount with explicit gas parameters
-                const approveTx = await ponyToken.approve(PIXEL_PONY_ADDRESS, ethers.constants.MaxUint256, {
-                    gasLimit: 100000,
-                    maxPriorityFeePerGas: gasPriceWithBuffer,
-                    maxFeePerGas: gasPriceWithBuffer.mul(2)
-                });
-                updateStatus('Approving... waiting for confirmation...');
-                await approveTx.wait();
-
-                updateStatus('✅ PONY approved! Now click "PLACE BET & RACE" to start!');
-
-            } catch (error) {
-                console.error('Approval failed:', error);
-                let errorMsg = error.message;
-                if (error.reason) errorMsg = error.reason;
-                if (error.data && error.data.message) errorMsg = error.data.message;
-                updateStatus('❌ Approval failed: ' + errorMsg);
-                alert('Approval Error: ' + errorMsg);
-            } finally {
-                isRacing = false;
-                updateRaceButton();
-            }
-        }
-
-        // Place bet and race
+        // Batch approve and race using wallet_sendCalls (EIP-5792)
         async function race() {
             if (isRacing) return;
             isRacing = true;
 
             try {
-                const pixelPony = new ethers.Contract(PIXEL_PONY_ADDRESS, PIXEL_PONY_ABI, signer);
-
-                updateStatus('🏁 Racing! Watch your pony go!');
+                updateStatus('Preparing race...');
 
                 // Show track
                 createTrack();
 
-                // Get base fee (ETH required for race)
+                // Get Farcaster ethereum provider
+                const ethProvider = await window.farcasterSdk.wallet.getEthereumProvider();
+
+                // Create contract instances (read-only for encoding)
+                const ponyTokenInterface = new ethers.utils.Interface(PONY_TOKEN_ABI);
+                const pixelPonyInterface = new ethers.utils.Interface(PIXEL_PONY_ABI);
+
+                // Get base fee
+                const pixelPony = new ethers.Contract(PIXEL_PONY_ADDRESS, PIXEL_PONY_ABI, provider);
                 const baseFee = await pixelPony.baseFeeAmount();
 
-                // Get current gas price
-                const gasPrice = await provider.getGasPrice();
-                const gasPriceWithBuffer = gasPrice.mul(120).div(100); // 20% buffer
+                // Encode approve call data
+                const approveData = ponyTokenInterface.encodeFunctionData('approve', [
+                    PIXEL_PONY_ADDRESS,
+                    ethers.constants.MaxUint256
+                ]);
 
-                // Place bet and race (send ETH as baseFee)
-                const raceTx = await pixelPony.placeBetAndRace(selectedHorse, selectedBet, {
-                    value: baseFee,
-                    gasLimit: 1000000,
-                    maxPriorityFeePerGas: gasPriceWithBuffer,
-                    maxFeePerGas: gasPriceWithBuffer.mul(2)
+                // Encode race call data
+                const raceData = pixelPonyInterface.encodeFunctionData('placeBetAndRace', [
+                    selectedHorse,
+                    selectedBet
+                ]);
+
+                updateStatus('🏁 Approving and racing! Confirm in wallet...');
+
+                // Batch both transactions using wallet_sendCalls
+                const batchTxHash = await ethProvider.request({
+                    method: 'wallet_sendCalls',
+                    params: [{
+                        version: '1.0',
+                        chainId: '0x' + BASE_CHAIN_ID.toString(16),
+                        from: userAddress,
+                        calls: [
+                            {
+                                to: PONY_TOKEN_ADDRESS,
+                                data: approveData
+                            },
+                            {
+                                to: PIXEL_PONY_ADDRESS,
+                                data: raceData,
+                                value: '0x' + baseFee.toHexString().slice(2)
+                            }
+                        ]
+                    }]
                 });
-                const receipt = await raceTx.wait();
 
-                // Get race results from event
-                const raceEvent = receipt.events.find(e => e.event === 'RaceExecuted');
-                const { raceId, winners, payout, won } = raceEvent.args;
+                updateStatus('Transactions submitted! Waiting for confirmation...');
+                console.log('Batch tx hash:', batchTxHash);
 
-                // Animate race
-                await animateRace(winners.map(w => w.toNumber()));
+                // Wait for transactions to be mined
+                // Note: wallet_sendCalls returns a batch ID, we need to poll for results
+                await new Promise(resolve => setTimeout(resolve, 5000)); // Wait 5 seconds
 
-                // Show result
-                showResult(won, winners.map(w => w.toNumber()), ethers.utils.formatEther(payout));
+                // Get recent events to find our race
+                const filter = pixelPony.filters.RaceExecuted(null, userAddress);
+                const events = await pixelPony.queryFilter(filter, -10); // Last 10 blocks
+
+                if (events.length > 0) {
+                    const latestEvent = events[events.length - 1];
+                    const { winners, payout, won } = latestEvent.args;
+
+                    // Animate race
+                    await animateRace(winners.map(w => w.toNumber()));
+
+                    // Show result
+                    showResult(won, winners.map(w => w.toNumber()), ethers.utils.formatEther(payout));
+                } else {
+                    updateStatus('✅ Race complete! Check your results on the main page.');
+                }
 
             } catch (error) {
                 console.error('Race failed:', error);
                 let errorMsg = error.message;
                 if (error.reason) errorMsg = error.reason;
                 if (error.data && error.data.message) errorMsg = error.data.message;
-                updateStatus('❌ Race failed: ' + errorMsg);
-                alert('Race Error: ' + errorMsg);
+                if (errorMsg.includes('User rejected')) {
+                    updateStatus('❌ Transaction cancelled');
+                } else {
+                    updateStatus('❌ Race failed: ' + errorMsg);
+                    alert('Race Error: ' + errorMsg);
+                }
             } finally {
                 isRacing = false;
-                updateRaceButton();
-                // Reload jackpot after race (win or lose)
+                await updateRaceButton();
+                // Reload jackpot and balances after race (win or lose)
                 await loadJackpot();
+                await loadBalances();
             }
         }
 
@@ -789,8 +858,7 @@
             document.getElementById('statusMessage').textContent = message;
         }
 
-        // Button handlers
-        document.getElementById('approveBtn').onclick = approvePony;
+        // Button handler
         document.getElementById('raceBtn').onclick = race;
 
         // Initialize on load
