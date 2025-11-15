@@ -21,8 +21,8 @@
         }
 
         body {
-            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
-            color: #fff;
+            background: #bdc3ff;
+            color: #000;
             overflow-x: hidden;
             min-height: 100vh;
             padding: 10px;
@@ -36,43 +36,54 @@
         .header {
             text-align: center;
             padding: 20px 10px;
-            background: rgba(0,0,0,0.3);
+            background: #ffffff;
+            border: 2px solid #cccccc;
             border-radius: 10px;
             margin-bottom: 20px;
+            box-shadow: 0 4px 8px rgba(0,0,0,0.1);
         }
 
-        .header h1 {
-            font-size: 18px;
+        .header img {
+            max-width: 200px;
+            height: auto;
             margin-bottom: 10px;
-            text-shadow: 2px 2px 0 #000;
+        }
+
+        .header .tagline {
+            font-size: 7px;
+            color: #000;
+            margin-top: 5px;
         }
 
         .wallet-info {
             font-size: 8px;
             padding: 8px;
-            background: rgba(255,255,255,0.1);
+            background: #f0f0f0;
             border-radius: 5px;
             margin-top: 10px;
+            color: #000;
         }
 
         .jackpot-display {
-            background: linear-gradient(135deg, #f093fb 0%, #f5576c 100%);
+            background: #ffffff;
             padding: 20px;
             border-radius: 10px;
             text-align: center;
             margin-bottom: 20px;
-            border: 3px solid #fff;
+            border: 2px solid #cccccc;
+            box-shadow: 0 4px 8px rgba(0,0,0,0.1);
         }
 
         .jackpot-label {
             font-size: 10px;
             margin-bottom: 5px;
+            color: #000;
         }
 
         .jackpot-amount {
             font-size: 24px;
-            color: #ffeb3b;
-            text-shadow: 2px 2px 0 #000;
+            color: #ff6b6b;
+            font-weight: bold;
         }
 
         .horse-grid {
@@ -83,8 +94,8 @@
         }
 
         .horse-card {
-            background: rgba(255,255,255,0.1);
-            border: 2px solid transparent;
+            background: #ffffff;
+            border: 2px solid #cccccc;
             border-radius: 8px;
             padding: 10px;
             text-align: center;
@@ -97,9 +108,9 @@
         }
 
         .horse-card.selected {
-            border-color: #ffeb3b;
-            background: rgba(255,235,59,0.2);
-            box-shadow: 0 0 20px rgba(255,235,59,0.5);
+            border-color: #ff6b6b;
+            background: #fff5f5;
+            box-shadow: 0 0 10px rgba(255,107,107,0.5);
         }
 
         .horse-sprite {
@@ -111,20 +122,23 @@
 
         .horse-number {
             font-size: 12px;
-            color: #fff;
+            color: #000;
         }
 
         .bet-section {
-            background: rgba(0,0,0,0.3);
+            background: #ffffff;
             padding: 20px;
             border-radius: 10px;
             margin-bottom: 20px;
+            border: 2px solid #cccccc;
+            box-shadow: 0 4px 8px rgba(0,0,0,0.1);
         }
 
         .bet-label {
             font-size: 10px;
             margin-bottom: 10px;
             text-align: center;
+            color: #000;
         }
 
         .bet-buttons {
@@ -136,10 +150,10 @@
 
         .bet-btn {
             padding: 15px;
-            background: rgba(255,255,255,0.1);
-            border: 2px solid #fff;
+            background: #f0f0f0;
+            border: 2px solid #cccccc;
             border-radius: 5px;
-            color: #fff;
+            color: #000;
             font-size: 10px;
             cursor: pointer;
             transition: all 0.2s;
@@ -150,41 +164,47 @@
         }
 
         .bet-btn.active {
-            background: #4caf50;
-            border-color: #4caf50;
+            background: #ff6b6b;
+            border-color: #d32f2f;
+            color: #fff;
         }
 
         .race-btn {
             width: 100%;
             padding: 20px;
-            background: linear-gradient(135deg, #f093fb 0%, #f5576c 100%);
-            border: 3px solid #fff;
+            background: #ff6b6b;
+            border: 2px solid #d32f2f;
             border-radius: 10px;
             color: #fff;
             font-size: 14px;
             cursor: pointer;
-            text-shadow: 2px 2px 0 #000;
             transition: all 0.2s;
             margin-bottom: 20px;
+            box-shadow: 0 4px 8px rgba(0,0,0,0.2);
         }
 
         .race-btn:active {
             transform: scale(0.98);
+            background: #f55555;
         }
 
         .race-btn:disabled {
             opacity: 0.5;
             cursor: not-allowed;
+            background: #cccccc;
+            border-color: #999999;
         }
 
         .status-message {
-            background: rgba(0,0,0,0.5);
+            background: #ffffff;
             padding: 15px;
             border-radius: 10px;
             text-align: center;
             font-size: 10px;
             line-height: 1.6;
             margin-bottom: 20px;
+            border: 2px solid #cccccc;
+            color: #000;
         }
 
         .track-container {
@@ -261,12 +281,13 @@
         }
 
         .result-content {
-            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            background: #ffffff;
             padding: 30px;
             border-radius: 15px;
             text-align: center;
-            border: 3px solid #fff;
+            border: 2px solid #cccccc;
             max-width: 90%;
+            box-shadow: 0 8px 16px rgba(0,0,0,0.3);
         }
 
         .result-emoji {
@@ -277,19 +298,21 @@
         .result-title {
             font-size: 20px;
             margin-bottom: 15px;
+            color: #000;
         }
 
         .result-details {
             font-size: 10px;
             line-height: 1.8;
             margin-bottom: 20px;
+            color: #000;
         }
 
         .close-btn {
             padding: 15px 30px;
-            background: #fff;
-            color: #764ba2;
-            border: none;
+            background: #ff6b6b;
+            color: #fff;
+            border: 2px solid #d32f2f;
             border-radius: 8px;
             font-size: 12px;
             cursor: pointer;
@@ -325,7 +348,8 @@
     <div class="container">
         <!-- Header -->
         <div class="header">
-            <h1>🏇 PIXEL PONIES 🏇</h1>
+            <img src="logo.png" alt="Pixel Ponies Logo">
+            <div class="tagline">16 PIXELATED PONIES RACING ON-CHAIN FOR NO REASON</div>
             <div id="walletInfo" class="wallet-info">Connecting wallet...</div>
         </div>
 
@@ -350,9 +374,9 @@
         <div class="bet-section">
             <div class="bet-label">SELECT BET AMOUNT</div>
             <div class="bet-buttons">
+                <button class="bet-btn" data-amount="10000000000">10B</button>
+                <button class="bet-btn" data-amount="25000000000">25B</button>
                 <button class="bet-btn" data-amount="50000000000">50B</button>
-                <button class="bet-btn" data-amount="100000000000">100B</button>
-                <button class="bet-btn" data-amount="500000000000">500B</button>
             </div>
         </div>
 
