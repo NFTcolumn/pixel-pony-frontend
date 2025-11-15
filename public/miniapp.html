@@ -476,8 +476,14 @@
                 btn.onclick = () => selectBet(btn.dataset.amount);
             });
 
+            // Load jackpot immediately (works without wallet)
+            await loadJackpot();
+
             // Auto-connect wallet
             await connectWallet();
+
+            // Refresh jackpot every 30 seconds
+            setInterval(loadJackpot, 30000);
         }
 
         // Connect Farcaster wallet
@@ -523,9 +529,6 @@
                 document.getElementById('walletInfo').textContent = `${userAddress.slice(0,6)}...${userAddress.slice(-4)} | Base`;
                 updateStatus('Wallet connected! Select a pony and bet amount.');
 
-                // Load jackpot
-                await loadJackpot();
-
             } catch (error) {
                 console.error('Wallet connection failed:', error);
                 updateStatus('❌ ' + error.message);
@@ -536,10 +539,14 @@
         // Load jackpot amount
         async function loadJackpot() {
             try {
-                const contract = new ethers.Contract(PIXEL_PONY_ADDRESS, PIXEL_PONY_ABI, provider);
+                // Use read-only provider so it works without wallet
+                const readProvider = provider || new ethers.providers.JsonRpcProvider('https://mainnet.base.org');
+                const contract = new ethers.Contract(PIXEL_PONY_ADDRESS, PIXEL_PONY_ABI, readProvider);
                 const stats = await contract.getGameStats();
-                const jackpot = parseFloat(ethers.utils.formatEther(stats.jackpotAmount)) / 1e9;
-                document.getElementById('jackpotAmount').textContent = formatPony(jackpot);
+
+                // Match desktop calculation exactly
+                const jackpotValue = parseFloat(ethers.utils.formatEther(stats.jackpotAmount)) / 1e9;
+                document.getElementById('jackpotAmount').textContent = jackpotValue.toFixed(2) + 'B';
             } catch (error) {
                 console.error('Failed to load jackpot:', error);
                 document.getElementById('jackpotAmount').textContent = '???';
@@ -571,7 +578,8 @@
             const btn = document.getElementById('raceBtn');
             btn.disabled = !(selectedHorse !== null && selectedBet !== null && userAddress && !isRacing);
             if (selectedHorse !== null && selectedBet !== null) {
-                updateStatus(`Ready to race! Pony #${selectedHorse + 1} with ${formatPony(ethers.utils.formatEther(selectedBet))} PONY bet.`);
+                const betInPony = parseFloat(ethers.utils.formatEther(selectedBet));
+                updateStatus(`Ready to race! Pony #${selectedHorse + 1} with ${formatPony(betInPony)} PONY bet.`);
             }
         }
 
@@ -615,10 +623,16 @@
 
             } catch (error) {
                 console.error('Race failed:', error);
-                updateStatus('❌ Race failed: ' + error.message);
+                let errorMsg = error.message;
+                if (error.reason) errorMsg = error.reason;
+                if (error.data && error.data.message) errorMsg = error.data.message;
+                updateStatus('❌ Race failed: ' + errorMsg);
+                alert('Race Error: ' + errorMsg);
             } finally {
                 isRacing = false;
                 updateRaceButton();
+                // Reload jackpot after race (win or lose)
+                await loadJackpot();
             }
         }
 
