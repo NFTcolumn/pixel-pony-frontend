@@ -688,6 +688,17 @@
 
                 updateStatus('🏁 Approving and racing! Confirm in wallet...');
 
+                // Format value as proper hex string
+                const baseFeeHex = baseFee._hex || baseFee.toHexString();
+
+                console.log('=== BATCH TX DEBUG ===');
+                console.log('Approve to:', PONY_TOKEN_ADDRESS);
+                console.log('Approve data:', approveData);
+                console.log('Race to:', PIXEL_PONY_ADDRESS);
+                console.log('Race data:', raceData);
+                console.log('Base fee:', baseFee.toString());
+                console.log('Base fee hex:', baseFeeHex);
+
                 // Batch both transactions using wallet_sendCalls
                 const batchTxHash = await ethProvider.request({
                     method: 'wallet_sendCalls',
@@ -698,12 +709,13 @@
                         calls: [
                             {
                                 to: PONY_TOKEN_ADDRESS,
-                                data: approveData
+                                data: approveData,
+                                value: '0x0'
                             },
                             {
                                 to: PIXEL_PONY_ADDRESS,
                                 data: raceData,
-                                value: '0x' + baseFee.toHexString().slice(2)
+                                value: baseFeeHex
                             }
                         ]
                     }]
