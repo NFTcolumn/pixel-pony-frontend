@@ -615,7 +615,9 @@
             raceBtn.disabled = !canInteract;
 
             if (selectedHorse !== null && selectedBet !== null) {
-                const betInPony = parseFloat(ethers.utils.formatEther(selectedBet));
+                // selectedBet is a string, convert to BigNumber first
+                const betBigNumber = ethers.BigNumber.from(selectedBet);
+                const betInPony = parseFloat(ethers.utils.formatEther(betBigNumber));
 
                 // Check if user has enough PONY and ETH
                 if (userAddress && provider) {
