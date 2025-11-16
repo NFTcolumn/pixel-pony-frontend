@@ -706,6 +706,7 @@
                         version: '1.0',
                         chainId: '0x' + BASE_CHAIN_ID.toString(16),
                         from: userAddress,
+                        atomicRequired: false,
                         calls: [
                             {
                                 to: PONY_TOKEN_ADDRESS,
@@ -717,12 +718,7 @@
                                 data: raceData,
                                 value: baseFeeHex
                             }
-                        ],
-                        capabilities: {
-                            atomicBatch: {
-                                supported: false
-                            }
-                        }
+                        ]
                     }]
                 });
 
