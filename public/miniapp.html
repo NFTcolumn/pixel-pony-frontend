@@ -703,7 +703,7 @@
                 const batchTxHash = await ethProvider.request({
                     method: 'wallet_sendCalls',
                     params: [{
-                        version: '1.0',
+                        version: '2.0.0',
                         chainId: '0x' + BASE_CHAIN_ID.toString(16),
                         from: userAddress,
                         atomicRequired: false,
