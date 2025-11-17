@@ -6,9 +6,10 @@
     <title>Pixel Ponies - Race & Win!</title>
     <link rel="icon" type="image/x-icon" href="/favicon.ico">
 
-    <!-- Farcaster Mini App -->
-    <meta property="fc:frame" content="vNext" />
-    <meta property="fc:frame:manifest" content="https://pixel-pony-frontend.onrender.com/.well-known/farcaster.json" />
+    <!-- Farcaster Mini App Embed -->
+    <meta name="fc:miniapp" content='{"version":"1","imageUrl":"https://pixel-pony-frontend.onrender.com/splash-1200x630.png","button":{"title":"🏁 Race Now!","action":{"type":"launch_miniapp","name":"Pixel Ponies","url":"https://pixel-pony-frontend.onrender.com/miniapp.html","splashImageUrl":"https://pixel-pony-frontend.onrender.com/icon-512.png","splashBackgroundColor":"#bdc3ff"}}}' />
+    <!-- For backward compatibility -->
+    <meta name="fc:frame" content='{"version":"1","imageUrl":"https://pixel-pony-frontend.onrender.com/splash-1200x630.png","button":{"title":"🏁 Race Now!","action":{"type":"launch_frame","name":"Pixel Ponies","url":"https://pixel-pony-frontend.onrender.com/miniapp.html","splashImageUrl":"https://pixel-pony-frontend.onrender.com/icon-512.png","splashBackgroundColor":"#bdc3ff"}}}' />
 
     <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Press+Start+2P&display=swap">
 
@@ -413,15 +414,33 @@
 
     <!-- Farcaster SDK -->
     <script type="module">
-        import { sdk } from 'https://esm.sh/@farcaster/miniapp-sdk';
+        import { sdk } from 'https://esm.sh/@farcaster/miniapp-sdk@latest';
+
+        // Make SDK globally available
         window.farcasterSdk = sdk;
+        window.sdkReady = false;
 
         (async () => {
             try {
-                await sdk.actions.ready();
-                console.log('Farcaster Mini App ready');
+                // Check if we're in a Mini App context
+                const isMiniApp = await sdk.isInMiniApp();
+                console.log('Is in Mini App context:', isMiniApp);
+
+                if (isMiniApp) {
+                    // Signal that app is ready
+                    await sdk.actions.ready();
+                    window.sdkReady = true;
+                    console.log('✅ Farcaster Mini App SDK ready');
+
+                    // Log context for debugging
+                    console.log('SDK Context:', sdk.context);
+                } else {
+                    console.log('⚠️ Not in Farcaster Mini App context');
+                    window.sdkReady = false;
+                }
             } catch (error) {
-                console.log('Not in Farcaster context');
+                console.error('SDK initialization error:', error);
+                window.sdkReady = false;
             }
         })();
     </script>
@@ -461,6 +480,30 @@
             return absNum.toFixed(2);
         }
 
+        // Wait for SDK to be ready
+        async function waitForSdk() {
+            return new Promise((resolve) => {
+                if (window.sdkReady) {
+                    resolve(true);
+                    return;
+                }
+
+                // Wait up to 5 seconds for SDK
+                let attempts = 0;
+                const maxAttempts = 50;
+                const interval = setInterval(() => {
+                    attempts++;
+                    if (window.sdkReady) {
+                        clearInterval(interval);
+                        resolve(true);
+                    } else if (attempts >= maxAttempts) {
+                        clearInterval(interval);
+                        resolve(false);
+                    }
+                }, 100);
+            });
+        }
+
         // Initialize
         async function init() {
             // Generate horse grid
@@ -486,8 +529,15 @@
             // Load jackpot immediately (works without wallet)
             await loadJackpot();
 
-            // Auto-connect wallet
-            await connectWallet();
+            // Wait for SDK to be ready before connecting wallet
+            const sdkReady = await waitForSdk();
+            if (sdkReady) {
+                console.log('SDK ready, connecting wallet...');
+                await connectWallet();
+            } else {
+                console.warn('SDK not ready after timeout - may not be in Mini App context');
+                updateStatus('⚠️ Please open in Farcaster app for full functionality');
+            }
 
             // Refresh jackpot every 30 seconds
             setInterval(loadJackpot, 30000);
@@ -499,26 +549,33 @@
                 updateStatus('Connecting to Farcaster wallet...');
 
                 if (!window.farcasterSdk) {
+                    console.log('SDK not available - may not be in Farcaster context');
                     throw new Error('Not in Farcaster miniapp');
                 }
 
+                // Get Ethereum provider
                 const ethProvider = await window.farcasterSdk.wallet.getEthereumProvider();
                 if (!ethProvider) {
-                    throw new Error('No wallet provider');
+                    throw new Error('No wallet provider available');
                 }
 
+                console.log('Ethereum provider obtained:', ethProvider);
+
+                // Create Web3 provider
                 provider = new ethers.providers.Web3Provider(ethProvider);
 
-                // Try to get accounts (already connected)
-                let accounts = await ethProvider.request({ method: 'eth_accounts' });
-
-                // If no accounts, request permission
-                if (!accounts || accounts.length === 0) {
+                // Request accounts (this will prompt user if needed)
+                let accounts;
+                try {
                     accounts = await ethProvider.request({ method: 'eth_requestAccounts' });
+                    console.log('Accounts received:', accounts);
+                } catch (accountError) {
+                    console.error('Failed to get accounts:', accountError);
+                    throw new Error('Failed to connect wallet - user may have rejected');
                 }
 
                 if (!accounts || accounts.length === 0) {
-                    throw new Error('No accounts found');
+                    throw new Error('No accounts found - please connect wallet');
                 }
 
                 userAddress = accounts[0];
@@ -526,22 +583,72 @@
 
                 // Check network
                 const network = await provider.getNetwork();
+                console.log('Current network:', network.chainId);
+
                 if (network.chainId !== BASE_CHAIN_ID) {
-                    updateStatus(`⚠️ Please switch to Base network (Chain ID: ${BASE_CHAIN_ID})`);
-                    document.getElementById('walletInfo').textContent = `Wrong network: ${network.chainId}`;
-                    return;
+                    updateStatus('⚠️ Switching to Base network...');
+
+                    try {
+                        // Try to switch to Base network
+                        await ethProvider.request({
+                            method: 'wallet_switchEthereumChain',
+                            params: [{ chainId: '0x2105' }], // Base = 8453 = 0x2105
+                        });
+
+                        // Reload provider after network switch
+                        provider = new ethers.providers.Web3Provider(ethProvider);
+                        signer = provider.getSigner();
+
+                        console.log('Switched to Base network');
+                    } catch (switchError) {
+                        console.error('Network switch failed:', switchError);
+
+                        // If switch fails, try to add the network
+                        if (switchError.code === 4902) {
+                            try {
+                                await ethProvider.request({
+                                    method: 'wallet_addEthereumChain',
+                                    params: [{
+                                        chainId: '0x2105',
+                                        chainName: 'Base',
+                                        nativeCurrency: {
+                                            name: 'Ethereum',
+                                            symbol: 'ETH',
+                                            decimals: 18
+                                        },
+                                        rpcUrls: ['https://mainnet.base.org'],
+                                        blockExplorerUrls: ['https://basescan.org']
+                                    }]
+                                });
+
+                                // Reload provider after adding network
+                                provider = new ethers.providers.Web3Provider(ethProvider);
+                                signer = provider.getSigner();
+                            } catch (addError) {
+                                console.error('Failed to add Base network:', addError);
+                                updateStatus('❌ Please switch to Base network manually');
+                                document.getElementById('walletInfo').textContent = `Wrong network: ${network.chainId}`;
+                                return;
+                            }
+                        } else {
+                            updateStatus('❌ Please switch to Base network manually');
+                            document.getElementById('walletInfo').textContent = `Wrong network: ${network.chainId}`;
+                            return;
+                        }
+                    }
                 }
 
                 // Update UI
                 document.getElementById('walletInfo').textContent = `${userAddress.slice(0,6)}...${userAddress.slice(-4)} | Base`;
-                updateStatus('Wallet connected! Select a pony and bet amount.');
+                updateStatus('✅ Wallet connected! Select a pony and bet amount.');
 
                 // Load and display balances
                 await loadBalances();
 
             } catch (error) {
                 console.error('Wallet connection failed:', error);
-                updateStatus('❌ ' + error.message);
+                const errorMsg = error.message || 'Unknown error';
+                updateStatus('❌ Wallet connection failed: ' + errorMsg);
                 document.getElementById('walletInfo').textContent = 'Wallet not connected';
             }
         }
@@ -654,7 +761,7 @@
             }
         }
 
-        // Batch approve and race using wallet_sendCalls (EIP-5792)
+        // Race using wallet_sendCalls (EIP-5792) - batch approve and placeBetAndRace
         async function race() {
             if (isRacing) return;
             isRacing = true;
@@ -668,45 +775,43 @@
                 // Get Farcaster ethereum provider
                 const ethProvider = await window.farcasterSdk.wallet.getEthereumProvider();
 
-                // Create contract instances (read-only for encoding)
-                const ponyTokenInterface = new ethers.utils.Interface(PONY_TOKEN_ABI);
-                const pixelPonyInterface = new ethers.utils.Interface(PIXEL_PONY_ABI);
-
-                // Get base fee
+                // Get base fee first
                 const pixelPony = new ethers.Contract(PIXEL_PONY_ADDRESS, PIXEL_PONY_ABI, provider);
                 const baseFee = await pixelPony.baseFeeAmount();
 
-                // Encode approve call data
+                console.log('=== RACE DEBUG ===');
+                console.log('Selected horse:', selectedHorse);
+                console.log('Selected bet (string):', selectedBet);
+                console.log('Base fee:', baseFee.toString());
+                console.log('User address:', userAddress);
+
+                // Create interfaces for encoding
+                const ponyTokenInterface = new ethers.utils.Interface(PONY_TOKEN_ABI);
+                const pixelPonyInterface = new ethers.utils.Interface(PIXEL_PONY_ABI);
+
+                // Encode the approve call
                 const approveData = ponyTokenInterface.encodeFunctionData('approve', [
                     PIXEL_PONY_ADDRESS,
-                    ethers.constants.MaxUint256
+                    selectedBet  // Approve exact bet amount, not MaxUint256
                 ]);
 
-                // Encode race call data
+                // Encode the placeBetAndRace call
                 const raceData = pixelPonyInterface.encodeFunctionData('placeBetAndRace', [
                     selectedHorse,
                     selectedBet
                 ]);
 
-                updateStatus('🏁 Approving and racing! Confirm in wallet...');
-
-                // Format value as proper hex string
-                const baseFeeHex = baseFee._hex || baseFee.toHexString();
-
-                console.log('=== BATCH TX DEBUG ===');
-                console.log('Approve to:', PONY_TOKEN_ADDRESS);
                 console.log('Approve data:', approveData);
-                console.log('Race to:', PIXEL_PONY_ADDRESS);
                 console.log('Race data:', raceData);
-                console.log('Base fee:', baseFee.toString());
-                console.log('Base fee hex:', baseFeeHex);
 
-                // Batch both transactions using wallet_sendCalls
-                const batchTxHash = await ethProvider.request({
+                updateStatus('🏁 Confirm the transaction in your wallet...');
+
+                // Send batched transaction
+                const result = await ethProvider.request({
                     method: 'wallet_sendCalls',
                     params: [{
                         version: '2.0.0',
-                        chainId: '0x' + BASE_CHAIN_ID.toString(16),
+                        chainId: '0x2105', // Base = 8453 = 0x2105
                         from: userAddress,
                         atomicRequired: false,
                         calls: [
@@ -718,51 +823,59 @@
                             {
                                 to: PIXEL_PONY_ADDRESS,
                                 data: raceData,
-                                value: baseFeeHex
+                                value: baseFee.toHexString()
                             }
                         ]
                     }]
                 });
 
-                updateStatus('Transactions submitted! Waiting for confirmation...');
-                console.log('Batch tx hash:', batchTxHash);
+                console.log('Batch result:', result);
+                updateStatus('Transactions sent! Waiting for race results...');
 
-                // Wait for transactions to be mined
-                // Note: wallet_sendCalls returns a batch ID, we need to poll for results
-                await new Promise(resolve => setTimeout(resolve, 5000)); // Wait 5 seconds
+                // Wait longer for transactions to complete
+                await new Promise(resolve => setTimeout(resolve, 8000));
 
-                // Get recent events to find our race
-                const filter = pixelPony.filters.RaceExecuted(null, userAddress);
-                const events = await pixelPony.queryFilter(filter, -10); // Last 10 blocks
+                // Try to find the race event
+                try {
+                    const filter = pixelPony.filters.RaceExecuted(null, userAddress);
+                    const events = await pixelPony.queryFilter(filter, -20); // Check last 20 blocks
 
-                if (events.length > 0) {
-                    const latestEvent = events[events.length - 1];
-                    const { winners, payout, won } = latestEvent.args;
+                    if (events.length > 0) {
+                        const latestEvent = events[events.length - 1];
+                        const { winners, payout, won } = latestEvent.args;
 
-                    // Animate race
-                    await animateRace(winners.map(w => w.toNumber()));
+                        // Animate race
+                        await animateRace(winners.map(w => w.toNumber()));
 
-                    // Show result
-                    showResult(won, winners.map(w => w.toNumber()), ethers.utils.formatEther(payout));
-                } else {
-                    updateStatus('✅ Race complete! Check your results on the main page.');
+                        // Show result
+                        showResult(won, winners.map(w => w.toNumber()), ethers.utils.formatEther(payout));
+                    } else {
+                        updateStatus('⏳ Transactions pending... Refresh to see results.');
+                    }
+                } catch (eventError) {
+                    console.log('Could not fetch race event:', eventError);
+                    updateStatus('✅ Race submitted! Refresh to see results.');
                 }
 
             } catch (error) {
                 console.error('Race failed:', error);
-                let errorMsg = error.message;
-                if (error.reason) errorMsg = error.reason;
-                if (error.data && error.data.message) errorMsg = error.data.message;
-                if (errorMsg.includes('User rejected')) {
-                    updateStatus('❌ Transaction cancelled');
-                } else {
-                    updateStatus('❌ Race failed: ' + errorMsg);
-                    alert('Race Error: ' + errorMsg);
+                console.error('Error details:', {
+                    message: error.message,
+                    code: error.code,
+                    data: error.data
+                });
+
+                let errorMsg = 'Race failed';
+                if (error.message && error.message.includes('User rejected')) {
+                    errorMsg = 'Transaction cancelled';
+                } else if (error.message) {
+                    errorMsg = error.message;
                 }
+
+                updateStatus('❌ ' + errorMsg);
             } finally {
                 isRacing = false;
                 await updateRaceButton();
-                // Reload jackpot and balances after race (win or lose)
                 await loadJackpot();
                 await loadBalances();
             }

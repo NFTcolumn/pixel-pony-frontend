@@ -1,0 +1,99 @@
+{
+  "project": "Pixel Pony Racing Mini App",
+  "status": "fixing_wallet_integration",
+  "issues": {
+    "mobile": {
+      "description": "Wallet integration fails completely - cannot race from the app",
+      "severity": "critical"
+    },
+    "desktop": {
+      "description": "External wallet connects but functionality still broken",
+      "severity": "high"
+    }
+  },
+  "technology_stack": {
+    "framework": "React/Next.js (assumed based on typical setup)",
+    "sdk": "@farcaster/miniapp-sdk",
+    "wallet_integration": {
+      "evm": "Wagmi + @farcaster/miniapp-wagmi-connector",
+      "expected_chains": ["base", "ethereum", "optimism", "arbitrum", "polygon"]
+    }
+  },
+  "key_requirements": {
+    "manifest": {
+      "location": "/.well-known/farcaster.json",
+      "must_include": [
+        "accountAssociation (signed)",
+        "miniapp.name",
+        "miniapp.iconUrl",
+        "miniapp.homeUrl",
+        "miniapp.webhookUrl (optional for notifications)"
+      ]
+    },
+    "embed_metadata": {
+      "location": "fc:miniapp meta tag in HTML head",
+      "purpose": "Social sharing in Farcaster feeds"
+    },
+    "sdk_initialization": {
+      "critical_call": "sdk.actions.ready()",
+      "timing": "Must be called after app loads to hide splash screen"
+    }
+  },
+  "farcaster_mini_apps_architecture": {
+    "identity": "Domain-based (FQDN is the unique identifier)",
+    "authentication": {
+      "method": "Sign In with Farcaster (SIWF)",
+      "alternative": "Quick Auth for simplified JWT sessions",
+      "key_point": "No OAuth 2.0 - user owns cryptographic keys"
+    },
+    "wallet_access": {
+      "evm": "EIP-1193 Ethereum Provider via sdk.wallet.getEthereumProvider()",
+      "solana": "Wallet Standard integration",
+      "key_benefit": "No wallet selection dialogs - seamless integration"
+    },
+    "data_model": {
+      "social_data": "Open, replicated on Snapchain",
+      "permissions": "No permission scopes - data is public",
+      "writes": "Cryptographic delegation via App Keys"
+    }
+  },
+  "common_issues_and_fixes": {
+    "infinite_splash_screen": {
+      "cause": "sdk.actions.ready() not called",
+      "fix": "Call sdk.actions.ready() after app initialization"
+    },
+    "wallet_not_connecting": {
+      "possible_causes": [
+        "Missing farcasterMiniApp connector in Wagmi config",
+        "Not using correct SDK version",
+        "Missing required chains in config",
+        "Domain mismatch between manifest and hosting"
+      ]
+    },
+    "manifest_issues": {
+      "not_found": "Must serve /.well-known/farcaster.json",
+      "unsigned": "Must include signed accountAssociation",
+      "domain_mismatch": "Signed domain must exactly match hosting domain"
+    }
+  },
+  "debugging_checklist": {
+    "1_verify_manifest": "curl -s https://yourdomain/.well-known/farcaster.json",
+    "2_check_embed": "Verify fc:miniapp meta tag exists",
+    "3_test_preview": "https://farcaster.xyz/~/developers/mini-apps/preview",
+    "4_check_console": "Look for SDK errors in browser console",
+    "5_verify_ready_called": "Ensure sdk.actions.ready() is executed"
+  },
+  "next_steps_to_diagnose": [
+    "Read current miniapp.html to see implementation",
+    "Check Wagmi configuration",
+    "Verify manifest exists and is properly signed",
+    "Check for console errors",
+    "Verify SDK initialization sequence"
+  ],
+  "important_notes": {
+    "node_version": "Requires Node.js 22.11.0 or higher",
+    "domain_stability": "Domain cannot be changed after manifest is published",
+    "tunnel_limitations": "ngrok/localtunnel work for preview but not for addMiniApp() or manifest features",
+    "security": "Transaction scanning via Blockaid - report false positives if needed"
+  }
+}
