@@ -901,48 +901,58 @@
             container.classList.add('active');
         }
 
-        // Animate race
+        // Animate race - matches game.html logic
         function animateRace(winners) {
             return new Promise(resolve => {
                 const trackWidth = document.getElementById('trackContainer').offsetWidth - 60;
-                const duration = 3000;
-                const fps = 60;
-                const frames = (duration / 1000) * fps;
+                const duration = 5000; // 5 seconds for better visibility
 
-                const positions = [];
-                for (let i = 0; i < 16; i++) {
-                    positions[i] = { current: 0, target: trackWidth };
-                }
+                // Generate random speeds for each horse (between 0.5 and 1.0)
+                const horseSpeeds = Array(16).fill(0).map(() => 0.5 + Math.random() * 0.5);
 
-                // Set winner finish times
-                winners.forEach((winnerId, place) => {
-                    const finishTime = frames - ((2 - place) * 20);
-                    positions[winnerId].finishTime = finishTime;
+                // Make winners faster based on their place
+                // This ensures they cross the finish line in the correct order
+                winners.forEach((winnerId, index) => {
+                    if (index === 0) horseSpeeds[winnerId] = 1.2; // 1st place - fastest
+                    else if (index === 1) horseSpeeds[winnerId] = 1.1; // 2nd place - fast
+                    else if (index === 2) horseSpeeds[winnerId] = 1.0; // 3rd place - medium-fast
                 });
 
-                let frame = 0;
+                const startTime = Date.now();
+                const finishPosition = trackWidth;
+
                 const interval = setInterval(() => {
+                    const elapsed = Date.now() - startTime;
+                    const progress = Math.min(elapsed / duration, 1);
+
+                    // Update each horse position
                     for (let i = 0; i < 16; i++) {
                         const horse = document.getElementById(`racer-${i}`);
                         if (!horse) continue;
 
-                        const finishTime = positions[i].finishTime || frames;
-                        const progress = Math.min(frame / finishTime, 1);
-                        const position = trackWidth * progress;
+                        const speed = horseSpeeds[i];
+                        // Ease out for smoother animation
+                        const easeProgress = 1 - Math.pow(1 - progress, 2);
+                        const position = 25 + (finishPosition - 25) * easeProgress * speed;
 
                         horse.style.left = position + 'px';
 
-                        if (progress >= 1 && winners.includes(i)) {
+                        // Add winner glow when they finish
+                        if (easeProgress >= 0.95 && winners.includes(i)) {
                             horse.classList.add('winner');
                         }
                     }
 
-                    frame++;
-                    if (frame >= frames + 30) {
+                    // Race finished
+                    if (progress >= 1) {
                         clearInterval(interval);
-                        resolve();
+
+                        // Wait a moment to show final positions
+                        setTimeout(() => {
+                            resolve();
+                        }, 1000);
                     }
-                }, 1000 / fps);
+                }, 50); // Update every 50ms (20 FPS)
             });
         }
 
