@@ -833,9 +833,18 @@
                 console.log('Bet amount (BigNumber):', betAmount.toString());
                 console.log('Bet amount (formatted):', ethers.utils.formatEther(betAmount), 'PONY');
                 console.log('User address:', userAddress);
+                console.log('Signer type:', signer.constructor.name);
+                console.log('Provider type:', provider.constructor.name);
+
+                // Call approve directly - uses eth_sendTransaction
+                console.log('Calling approve with:', {
+                    spender: PIXEL_PONY_ADDRESS,
+                    amount: betAmount.toString()
+                });
 
                 const approveTx = await ponyToken.approve(PIXEL_PONY_ADDRESS, betAmount);
                 console.log('Approve tx sent:', approveTx.hash);
+                console.log('Approve tx details:', approveTx);
 
                 updateStatus('⏳ Waiting for approval confirmation...');
                 const approveReceipt = await approveTx.wait();
@@ -849,8 +858,23 @@
                 updateStatus('✅ Approved! Now click STEP 2: RACE!');
 
             } catch (error) {
-                console.error('Approval failed:', error);
-                updateStatus('❌ Approval failed: ' + (error.message || 'Unknown error'));
+                console.error('=== APPROVAL ERROR ===');
+                console.error('Error name:', error.name);
+                console.error('Error code:', error.code);
+                console.error('Error message:', error.message);
+                console.error('Error data:', error.data);
+                console.error('Full error:', error);
+
+                let errorMsg = 'Approval failed';
+                if (error.code === 4200) {
+                    errorMsg = 'Wallet method not supported (4200). Try updating Farcaster app.';
+                } else if (error.code === 4001) {
+                    errorMsg = 'User rejected transaction';
+                } else if (error.message) {
+                    errorMsg = error.message;
+                }
+
+                updateStatus('❌ ' + errorMsg);
                 isApproved = false;
             }
         }
