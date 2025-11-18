@@ -3,13 +3,16 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <meta http-equiv="Cache-Control" content="no-cache, no-store, must-revalidate">
+    <meta http-equiv="Pragma" content="no-cache">
+    <meta http-equiv="Expires" content="0">
     <title>Pixel Ponies - Race & Win!</title>
     <link rel="icon" type="image/x-icon" href="/favicon.ico">
 
     <!-- Farcaster Mini App Embed -->
-    <meta name="fc:miniapp" content='{"version":"1","imageUrl":"https://pixel-pony-frontend.onrender.com/splash-1200x630.png","button":{"title":"🏁 Race Now!","action":{"type":"launch_miniapp","name":"Pixel Ponies","url":"https://pixel-pony-frontend.onrender.com/miniapp.html","splashImageUrl":"https://pixel-pony-frontend.onrender.com/icon-512.png","splashBackgroundColor":"#bdc3ff"}}}' />
+    <meta name="fc:miniapp" content='{"version":"1","imageUrl":"https://pixel-pony-frontend.onrender.com/splash-1200x630.png?v=20251117","button":{"title":"🏁 Race Now!","action":{"type":"launch_miniapp","name":"Pixel Ponies","url":"https://pixel-pony-frontend.onrender.com/miniapp.html?v=20251117","splashImageUrl":"https://pixel-pony-frontend.onrender.com/icon-512.png?v=20251117","splashBackgroundColor":"#bdc3ff"}}}' />
     <!-- For backward compatibility -->
-    <meta name="fc:frame" content='{"version":"1","imageUrl":"https://pixel-pony-frontend.onrender.com/splash-1200x630.png","button":{"title":"🏁 Race Now!","action":{"type":"launch_frame","name":"Pixel Ponies","url":"https://pixel-pony-frontend.onrender.com/miniapp.html","splashImageUrl":"https://pixel-pony-frontend.onrender.com/icon-512.png","splashBackgroundColor":"#bdc3ff"}}}' />
+    <meta name="fc:frame" content='{"version":"1","imageUrl":"https://pixel-pony-frontend.onrender.com/splash-1200x630.png?v=20251117","button":{"title":"🏁 Race Now!","action":{"type":"launch_frame","name":"Pixel Ponies","url":"https://pixel-pony-frontend.onrender.com/miniapp.html?v=20251117","splashImageUrl":"https://pixel-pony-frontend.onrender.com/icon-512.png?v=20251117","splashBackgroundColor":"#bdc3ff"}}}' />
 
     <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Press+Start+2P&display=swap">
 
@@ -209,15 +212,46 @@
         }
 
         .track-container {
-            background: #1a1a2e;
-            border-radius: 10px;
-            padding: 20px;
-            margin-bottom: 20px;
+            position: fixed;
+            top: 0;
+            left: 0;
+            right: 0;
+            bottom: 0;
+            background: rgba(0, 0, 0, 0.95);
+            z-index: 1000;
             display: none;
+            align-items: center;
+            justify-content: center;
+            padding: 20px;
         }
 
         .track-container.active {
-            display: block;
+            display: flex;
+        }
+
+        .track-inner {
+            background: #1a1a2e;
+            border-radius: 10px;
+            padding: 20px;
+            width: 100%;
+            max-width: 500px;
+            position: relative;
+            max-height: 90vh;
+            overflow-y: auto;
+        }
+
+        .track-close {
+            position: absolute;
+            top: 10px;
+            right: 10px;
+            background: #ff6b6b;
+            color: #fff;
+            border: none;
+            border-radius: 5px;
+            padding: 8px 12px;
+            font-size: 8px;
+            cursor: pointer;
+            z-index: 10;
         }
 
         .track-lane {
@@ -396,9 +430,13 @@
         </button>
 
         <!-- Race Track -->
+        <!-- Race Track Overlay -->
         <div class="track-container" id="trackContainer">
-            <div class="finish-line"></div>
-            <div id="raceLanes"></div>
+            <div class="track-inner">
+                <button class="track-close" onclick="closeTrack()">✕ CLOSE</button>
+                <div class="finish-line"></div>
+                <div id="raceLanes"></div>
+            </div>
         </div>
 
         <!-- Result Modal -->
@@ -417,7 +455,7 @@
 
     <!-- Farcaster SDK -->
     <script type="module">
-        import { sdk } from 'https://esm.sh/@farcaster/miniapp-sdk@latest';
+        import { sdk } from 'https://esm.sh/@farcaster/miniapp-sdk@latest?v=20251117';
 
         // Make SDK globally available
         window.farcasterSdk = sdk;
@@ -517,7 +555,7 @@
                 card.className = 'horse-card';
                 card.dataset.horse = i;
                 card.innerHTML = `
-                    <img src="sprites/${spriteNum}.png" class="horse-sprite" alt="Pony ${i+1}">
+                    <img src="sprites/${spriteNum}.png?v=20251117" class="horse-sprite" alt="Pony ${i+1}">
                     <div class="horse-number">#${i+1}</div>
                 `;
                 card.onclick = () => selectHorse(i);
@@ -910,7 +948,7 @@
                 lane.className = 'track-lane';
                 lane.innerHTML = `
                     <span class="lane-number">#${i+1}</span>
-                    <img src="sprites/${spriteNum}.png" class="horse-racer ${i === selectedHorse ? 'player-horse' : ''}" id="racer-${i}">
+                    <img src="sprites/${spriteNum}.png?v=20251117" class="horse-racer ${i === selectedHorse ? 'player-horse' : ''}" id="racer-${i}">
                 `;
                 lanes.appendChild(lane);
             }
@@ -918,10 +956,16 @@
             container.classList.add('active');
         }
 
+        // Close track overlay
+        function closeTrack() {
+            document.getElementById('trackContainer').classList.remove('active');
+        }
+
         // Animate race - matches game.html logic
         function animateRace(winners) {
             return new Promise(resolve => {
-                const trackWidth = document.getElementById('trackContainer').offsetWidth - 60;
+                const trackInner = document.querySelector('.track-inner');
+                const trackWidth = trackInner.offsetWidth - 60;
                 const duration = 5000; // 5 seconds for better visibility
 
                 // Generate random speeds for each horse (between 0.5 and 1.0)
