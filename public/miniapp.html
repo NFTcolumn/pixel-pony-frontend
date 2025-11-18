@@ -761,7 +761,7 @@
             }
         }
 
-        // Race using wallet_sendCalls (EIP-5792) - batch approve and placeBetAndRace
+        // Race - with fallback for wallets that don't support batching
         async function race() {
             if (isRacing) return;
             isRacing = true;
@@ -772,11 +772,9 @@
                 // Show track
                 createTrack();
 
-                // Get Farcaster ethereum provider
-                const ethProvider = await window.farcasterSdk.wallet.getEthereumProvider();
-
-                // Get base fee first
-                const pixelPony = new ethers.Contract(PIXEL_PONY_ADDRESS, PIXEL_PONY_ABI, provider);
+                // Get contracts
+                const ponyToken = new ethers.Contract(PONY_TOKEN_ADDRESS, PONY_TOKEN_ABI, signer);
+                const pixelPony = new ethers.Contract(PIXEL_PONY_ADDRESS, PIXEL_PONY_ABI, signer);
                 const baseFee = await pixelPony.baseFeeAmount();
 
                 console.log('=== RACE DEBUG ===');
@@ -785,55 +783,81 @@
                 console.log('Base fee:', baseFee.toString());
                 console.log('User address:', userAddress);
 
-                // Create interfaces for encoding
-                const ponyTokenInterface = new ethers.utils.Interface(PONY_TOKEN_ABI);
-                const pixelPonyInterface = new ethers.utils.Interface(PIXEL_PONY_ABI);
+                // Try batch transaction first (if supported)
+                const ethProvider = await window.farcasterSdk.wallet.getEthereumProvider();
+                let usedBatch = false;
 
-                // Encode the approve call
-                const approveData = ponyTokenInterface.encodeFunctionData('approve', [
-                    PIXEL_PONY_ADDRESS,
-                    selectedBet  // Approve exact bet amount, not MaxUint256
-                ]);
+                try {
+                    // Check if wallet_sendCalls is supported
+                    const ponyTokenInterface = new ethers.utils.Interface(PONY_TOKEN_ABI);
+                    const pixelPonyInterface = new ethers.utils.Interface(PIXEL_PONY_ABI);
 
-                // Encode the placeBetAndRace call
-                const raceData = pixelPonyInterface.encodeFunctionData('placeBetAndRace', [
-                    selectedHorse,
-                    selectedBet
-                ]);
+                    const approveData = ponyTokenInterface.encodeFunctionData('approve', [
+                        PIXEL_PONY_ADDRESS,
+                        selectedBet
+                    ]);
 
-                console.log('Approve data:', approveData);
-                console.log('Race data:', raceData);
+                    const raceData = pixelPonyInterface.encodeFunctionData('placeBetAndRace', [
+                        selectedHorse,
+                        selectedBet
+                    ]);
 
-                updateStatus('🏁 Confirm the transaction in your wallet...');
+                    console.log('Attempting batch transaction...');
+                    updateStatus('🏁 Confirm the batch transaction...');
 
-                // Send batched transaction
-                const result = await ethProvider.request({
-                    method: 'wallet_sendCalls',
-                    params: [{
-                        version: '2.0.0',
-                        chainId: '0x2105', // Base = 8453 = 0x2105
-                        from: userAddress,
-                        atomicRequired: false,
-                        calls: [
-                            {
-                                to: PONY_TOKEN_ADDRESS,
-                                data: approveData,
-                                value: '0x0'
-                            },
-                            {
-                                to: PIXEL_PONY_ADDRESS,
-                                data: raceData,
-                                value: baseFee.toHexString()
-                            }
-                        ]
-                    }]
-                });
+                    const result = await ethProvider.request({
+                        method: 'wallet_sendCalls',
+                        params: [{
+                            version: '2.0.0',
+                            chainId: '0x2105',
+                            from: userAddress,
+                            atomicRequired: false,
+                            calls: [
+                                {
+                                    to: PONY_TOKEN_ADDRESS,
+                                    data: approveData,
+                                    value: '0x0'
+                                },
+                                {
+                                    to: PIXEL_PONY_ADDRESS,
+                                    data: raceData,
+                                    value: baseFee.toHexString()
+                                }
+                            ]
+                        }]
+                    });
 
-                console.log('Batch result:', result);
-                updateStatus('Transactions sent! Waiting for race results...');
+                    console.log('Batch transaction sent:', result);
+                    usedBatch = true;
+                    updateStatus('Batch transaction sent! Waiting for race results...');
+                    await new Promise(resolve => setTimeout(resolve, 8000));
 
-                // Wait longer for transactions to complete
-                await new Promise(resolve => setTimeout(resolve, 8000));
+                } catch (batchError) {
+                    console.log('Batch transaction not supported, using sequential:', batchError);
+
+                    // Fallback: Sequential transactions
+                    updateStatus('💰 Step 1/2: Approve PONY tokens...');
+
+                    // Step 1: Approve
+                    const approveTx = await ponyToken.approve(PIXEL_PONY_ADDRESS, selectedBet);
+                    console.log('Approve tx sent:', approveTx.hash);
+                    updateStatus('⏳ Waiting for approval...');
+                    await approveTx.wait();
+                    console.log('Approve tx confirmed');
+
+                    // Step 2: Place bet and race
+                    updateStatus('🏁 Step 2/2: Starting race...');
+                    const raceTx = await pixelPony.placeBetAndRace(selectedHorse, selectedBet, {
+                        value: baseFee
+                    });
+                    console.log('Race tx sent:', raceTx.hash);
+                    updateStatus('⏳ Racing in progress...');
+                    await raceTx.wait();
+                    console.log('Race tx confirmed');
+
+                    updateStatus('Race complete! Loading results...');
+                    await new Promise(resolve => setTimeout(resolve, 2000));
+                }
 
                 // Try to find the race event
                 try {
