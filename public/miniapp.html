@@ -381,15 +381,18 @@
         <div class="bet-section">
             <div class="bet-label">SELECT BET AMOUNT</div>
             <div class="bet-buttons">
-                <button class="bet-btn" data-amount="10000000000">10B</button>
-                <button class="bet-btn" data-amount="25000000000">25B</button>
-                <button class="bet-btn" data-amount="50000000000">50B</button>
+                <button class="bet-btn" data-amount="10000000000000000000000000000">10B</button>
+                <button class="bet-btn" data-amount="25000000000000000000000000000">25B</button>
+                <button class="bet-btn" data-amount="50000000000000000000000000000">50B</button>
             </div>
         </div>
 
-        <!-- Action Button -->
+        <!-- Action Buttons -->
+        <button class="race-btn" id="approveBtn" disabled style="margin-bottom: 10px;">
+            💰 STEP 1: APPROVE PONY
+        </button>
         <button class="race-btn" id="raceBtn" disabled>
-            🏁 APPROVE & RACE! 🏁
+            🏁 STEP 2: RACE!
         </button>
 
         <!-- Race Track -->
@@ -714,17 +717,28 @@
             updateRaceButton();
         }
 
-        // Update race button
+        // Update buttons
         async function updateRaceButton() {
+            const approveBtn = document.getElementById('approveBtn');
             const raceBtn = document.getElementById('raceBtn');
             const canInteract = selectedHorse !== null && selectedBet !== null && userAddress && !isRacing;
 
-            raceBtn.disabled = !canInteract;
+            // Approve button enabled when selections made
+            approveBtn.disabled = !canInteract || isApproved;
+
+            // Race button only enabled after approval
+            raceBtn.disabled = !isApproved || isRacing;
 
             if (selectedHorse !== null && selectedBet !== null) {
-                // selectedBet is a string, convert to BigNumber first
                 const betBigNumber = ethers.BigNumber.from(selectedBet);
-                const betInPony = parseFloat(ethers.utils.formatEther(betBigNumber));
+                const betInPony = ethers.utils.formatEther(betBigNumber);
+                const betDisplay = formatPony(parseFloat(betInPony));
+
+                console.log('=== BET AMOUNT DEBUG ===');
+                console.log('Selected bet string:', selectedBet);
+                console.log('Bet BigNumber:', betBigNumber.toString());
+                console.log('Bet in PONY:', betInPony);
+                console.log('Bet display:', betDisplay);
 
                 // Check if user has enough PONY and ETH
                 if (userAddress && provider) {
@@ -736,12 +750,12 @@
                         const pixelPony = new ethers.Contract(PIXEL_PONY_ADDRESS, PIXEL_PONY_ABI, provider);
                         const baseFee = await pixelPony.baseFeeAmount();
 
-                        const hasEnoughPony = ponyBalance.gte(selectedBet);
+                        const hasEnoughPony = ponyBalance.gte(betBigNumber);
                         const hasEnoughEth = ethBalance.gte(baseFee);
 
                         if (!hasEnoughPony) {
-                            updateStatus(`❌ Insufficient PONY! Need ${formatPony(betInPony)} PONY, have ${formatPony(ethers.utils.formatEther(ponyBalance))}`);
-                            raceBtn.disabled = true;
+                            updateStatus(`❌ Insufficient PONY! Need ${betDisplay} PONY, have ${formatPony(parseFloat(ethers.utils.formatEther(ponyBalance)))}`);
+                            approveBtn.disabled = true;
                             return;
                         }
 
@@ -749,11 +763,13 @@
                             const ethNeeded = parseFloat(ethers.utils.formatEther(baseFee)).toFixed(6);
                             const ethHave = parseFloat(ethers.utils.formatEther(ethBalance)).toFixed(6);
                             updateStatus(`❌ Insufficient ETH for race fee! Need ${ethNeeded} ETH, have ${ethHave} ETH`);
-                            raceBtn.disabled = true;
+                            approveBtn.disabled = true;
                             return;
                         }
 
-                        updateStatus(`Ready! Pony #${selectedHorse + 1} with ${formatPony(betInPony)} PONY bet. One button does it all!`);
+                        if (!isApproved) {
+                            updateStatus(`Ready! Pony #${selectedHorse + 1} with ${betDisplay} PONY bet. Click STEP 1 to approve!`);
+                        }
                     } catch (error) {
                         console.error('Balance check failed:', error);
                     }
@@ -761,33 +777,24 @@
             }
         }
 
-        // Race - sequential transactions that actually work
-        async function race() {
-            if (isRacing) return;
-            isRacing = true;
+        // State for approval
+        let isApproved = false;
+
+        // Step 1: Approve PONY tokens
+        async function approvePony() {
+            if (!userAddress || !signer || selectedBet === null) return;
 
             try {
-                updateStatus('Preparing race...');
-
-                // Show track
-                createTrack();
-
-                // Get contracts with signer
-                const ponyToken = new ethers.Contract(PONY_TOKEN_ADDRESS, PONY_TOKEN_ABI, signer);
-                const pixelPony = new ethers.Contract(PIXEL_PONY_ADDRESS, PIXEL_PONY_ABI, signer);
-                const baseFee = await pixelPony.baseFeeAmount();
-
-                console.log('=== RACE DEBUG ===');
-                console.log('Selected horse:', selectedHorse);
-                console.log('Selected bet (string):', selectedBet);
-                console.log('Selected bet (BigNumber):', ethers.BigNumber.from(selectedBet).toString());
-                console.log('Base fee:', baseFee.toString());
-                console.log('User address:', userAddress);
-
-                // Step 1: Approve PONY tokens
                 updateStatus('💰 Approving PONY tokens...');
+
+                const ponyToken = new ethers.Contract(PONY_TOKEN_ADDRESS, PONY_TOKEN_ABI, signer);
                 const betAmount = ethers.BigNumber.from(selectedBet);
-                console.log('Approving amount:', betAmount.toString());
+
+                console.log('=== APPROVE DEBUG ===');
+                console.log('Selected bet (string):', selectedBet);
+                console.log('Bet amount (BigNumber):', betAmount.toString());
+                console.log('Bet amount (formatted):', ethers.utils.formatEther(betAmount), 'PONY');
+                console.log('User address:', userAddress);
 
                 const approveTx = await ponyToken.approve(PIXEL_PONY_ADDRESS, betAmount);
                 console.log('Approve tx sent:', approveTx.hash);
@@ -796,13 +803,42 @@
                 const approveReceipt = await approveTx.wait();
                 console.log('Approve tx confirmed in block:', approveReceipt.blockNumber);
 
-                // Step 2: Place bet and race
+                isApproved = true;
+                document.getElementById('approveBtn').disabled = true;
+                document.getElementById('approveBtn').textContent = '✅ APPROVED!';
+                document.getElementById('raceBtn').disabled = false;
+
+                updateStatus('✅ Approved! Now click STEP 2: RACE!');
+
+            } catch (error) {
+                console.error('Approval failed:', error);
+                updateStatus('❌ Approval failed: ' + (error.message || 'Unknown error'));
+                isApproved = false;
+            }
+        }
+
+        // Step 2: Race
+        async function race() {
+            if (isRacing || !isApproved) return;
+            isRacing = true;
+
+            try {
                 updateStatus('🏁 Starting race...');
-                console.log('Calling placeBetAndRace with:', {
-                    horseId: selectedHorse,
-                    amount: betAmount.toString(),
-                    value: baseFee.toString()
-                });
+
+                // Show track
+                createTrack();
+
+                // Get contracts
+                const pixelPony = new ethers.Contract(PIXEL_PONY_ADDRESS, PIXEL_PONY_ABI, signer);
+                const baseFee = await pixelPony.baseFeeAmount();
+                const betAmount = ethers.BigNumber.from(selectedBet);
+
+                console.log('=== RACE DEBUG ===');
+                console.log('Selected horse:', selectedHorse);
+                console.log('Bet amount (BigNumber):', betAmount.toString());
+                console.log('Bet amount (formatted):', ethers.utils.formatEther(betAmount), 'PONY');
+                console.log('Base fee:', baseFee.toString());
+                console.log('User address:', userAddress);
 
                 const raceTx = await pixelPony.placeBetAndRace(selectedHorse, betAmount, {
                     value: baseFee
@@ -977,7 +1013,8 @@
             document.getElementById('statusMessage').textContent = message;
         }
 
-        // Button handler
+        // Button handlers
+        document.getElementById('approveBtn').onclick = approvePony;
         document.getElementById('raceBtn').onclick = race;
 
         // Initialize on load
