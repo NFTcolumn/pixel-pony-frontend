@@ -555,7 +555,7 @@
                 card.className = 'horse-card';
                 card.dataset.horse = i;
                 card.innerHTML = `
-                    <img src="sprites/${spriteNum}.png?v=20251117" class="horse-sprite" alt="Pony ${i+1}">
+                    <img src="sprites/${spriteNum}.png" class="horse-sprite" alt="Pony ${i+1}">
                     <div class="horse-number">#${i+1}</div>
                 `;
                 card.onclick = () => selectHorse(i);
@@ -948,7 +948,7 @@
                 lane.className = 'track-lane';
                 lane.innerHTML = `
                     <span class="lane-number">#${i+1}</span>
-                    <img src="sprites/${spriteNum}.png?v=20251117" class="horse-racer ${i === selectedHorse ? 'player-horse' : ''}" id="racer-${i}">
+                    <img src="sprites/${spriteNum}.png" class="horse-racer ${i === selectedHorse ? 'player-horse' : ''}" id="racer-${i}">
                 `;
                 lanes.appendChild(lane);
             }
