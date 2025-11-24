@@ -1,7 +1,7 @@
 services:
   - type: web
     name: pixel-pony-frontend
-    env: static
+    runtime: static
     buildCommand: npm install && npm run build
     staticPublishPath: ./dist
     headers:
