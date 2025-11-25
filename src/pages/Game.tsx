@@ -222,10 +222,20 @@ export default function Game() {
   const handleRace = async () => {
     if (selectedHorse === null || !selectedBet || !baseFee || isRacing) return
 
+    // Check if user has enough ETH (baseFee is 0.0005, gas on Base is ~0.0001)
+    if (ethBalanceData && baseFee) {
+      const minimumRequired = (baseFee as bigint) + parseEther('0.0002') // 0.0005 baseFee + 0.0002 gas buffer (2x actual)
+      if (ethBalanceData.value < minimumRequired) {
+        const needed = formatEther(minimumRequired)
+        const have = formatEther(ethBalanceData.value)
+        setStatusMessage(`Need ${needed} ETH total (${have} ETH available). Get more ETH!`)
+        return
+      }
+    }
+
     setStatusMessage('Sending race transaction...')
     setIsRacing(true)
     setRaceHash(null)
-    // Don't show track yet - wait for transaction confirmation
 
     console.log('Racing with params:')
     console.log('  - Horse ID:', selectedHorse)
@@ -233,6 +243,7 @@ export default function Game() {
     console.log('  - Bet Amount (PONY):', formatEther(selectedBet))
     console.log('  - Base Fee (value):', baseFee?.toString(), 'wei')
     console.log('  - Base Fee (ETH):', baseFee ? formatEther(baseFee as bigint) : 'N/A')
+    console.log('  - User ETH Balance:', ethBalanceData ? formatEther(ethBalanceData.value) : 'unknown')
 
     try {
       await writeContract({
@@ -241,10 +252,21 @@ export default function Game() {
         functionName: 'placeBetAndRace',
         args: [BigInt(selectedHorse), selectedBet],
         value: baseFee as bigint
+        // Let wagmi auto-estimate gas - it's more reliable
       })
     } catch (error) {
       console.error('Race error:', error)
-      setStatusMessage('Transaction rejected or failed')
+      const errorMsg = error instanceof Error ? error.message : 'Transaction failed'
+
+      // Better error messages
+      if (errorMsg.toLowerCase().includes('insufficient')) {
+        setStatusMessage('Insufficient ETH. Need ~0.0007 ETH total (0.0005 entry + gas).')
+      } else if (errorMsg.toLowerCase().includes('user rejected')) {
+        setStatusMessage('Transaction rejected')
+      } else {
+        setStatusMessage(`Error: ${errorMsg.substring(0, 80)}`)
+      }
+
       setShowTrack(false)
       setIsRacing(false)
     }
