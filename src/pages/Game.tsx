@@ -65,8 +65,14 @@ export default function Game() {
   const { isSuccess: isConfirmed } = useWaitForTransactionReceipt({ hash })
   const publicClient = usePublicClient()
 
-  const [selectedHorse, setSelectedHorse] = useState<number | null>(null)
-  const [selectedBet, setSelectedBet] = useState<bigint | null>(null)
+  const [selectedHorse, setSelectedHorse] = useState<number | null>(() => {
+    const saved = localStorage.getItem('selectedHorse')
+    return saved ? parseInt(saved) : null
+  })
+  const [selectedBet, setSelectedBet] = useState<bigint | null>(() => {
+    const saved = localStorage.getItem('selectedBet')
+    return saved ? BigInt(saved) : null
+  })
   const [statusMessage, setStatusMessage] = useState('Pick your pony and bet amount, then hit RACE!')
   const [isApproved, setIsApproved] = useState(false)
   const [showTrack, setShowTrack] = useState(false)
@@ -77,6 +83,23 @@ export default function Game() {
   const [approvalHash, setApprovalHash] = useState<`0x${string}` | null>(null)
   const trackInnerRef = useRef<HTMLDivElement>(null)
   const processedRaces = useRef<Set<string>>(new Set())
+
+  // Save selections to localStorage
+  useEffect(() => {
+    if (selectedHorse !== null) {
+      localStorage.setItem('selectedHorse', selectedHorse.toString())
+    } else {
+      localStorage.removeItem('selectedHorse')
+    }
+  }, [selectedHorse])
+
+  useEffect(() => {
+    if (selectedBet !== null) {
+      localStorage.setItem('selectedBet', selectedBet.toString())
+    } else {
+      localStorage.removeItem('selectedBet')
+    }
+  }, [selectedBet])
 
   // Read jackpot
   const { data: gameStats, refetch: refetchJackpot } = useReadContract({
@@ -127,11 +150,21 @@ export default function Game() {
   // Check if approved whenever allowance or selectedBet changes
   useEffect(() => {
     if (allowance && selectedBet) {
-      setIsApproved(allowance >= selectedBet)
+      const approved = allowance >= selectedBet
+      setIsApproved(approved)
+
+      // Update status message based on approval state
+      if (approved && selectedHorse !== null) {
+        const betDisplay = formatPony(formatEther(selectedBet))
+        setStatusMessage(`Ready to race! Pony #${selectedHorse + 1} with ${betDisplay} PONY. Click RACE!`)
+      } else if (selectedHorse !== null && selectedBet !== null) {
+        const betDisplay = formatPony(formatEther(selectedBet))
+        setStatusMessage(`Ready! Pony #${selectedHorse + 1} with ${betDisplay} PONY bet. Click STEP 1 to approve!`)
+      }
     } else {
       setIsApproved(false)
     }
-  }, [allowance, selectedBet])
+  }, [allowance, selectedBet, selectedHorse])
 
   // Update balances
   useEffect(() => {
@@ -509,7 +542,7 @@ export default function Game() {
   }
 
   const canApprove = selectedHorse !== null && selectedBet !== null && address && !isApproved && !isRacing
-  const canRace = isApproved && !isWritePending && !isRacing
+  const canRace = isApproved && selectedHorse !== null && selectedBet !== null && baseFee && !isWritePending && !isRacing
 
   if (!isConnected) {
     return (
@@ -585,10 +618,35 @@ export default function Game() {
       </div>
 
       {/* Action Buttons */}
-      <button className="race-btn" onClick={handleApprove} disabled={!canApprove || isWritePending}>
+      <button
+        className="race-btn"
+        onClick={handleApprove}
+        disabled={!canApprove || isWritePending}
+        style={{ opacity: (!canApprove || isWritePending) ? 0.5 : 1 }}
+      >
         {isApproved ? 'APPROVED!' : 'STEP 1: APPROVE PONY'}
       </button>
-      <button className="race-btn" onClick={handleRace} disabled={!canRace}>
+      <button
+        className="race-btn"
+        onClick={(e) => {
+          e.preventDefault()
+          console.log('Race button clicked!', { canRace, isApproved, selectedHorse, selectedBet, baseFee, isWritePending, isRacing })
+          if (canRace) {
+            handleRace()
+          } else {
+            console.log('Race button disabled. Conditions:', {
+              isApproved,
+              hasHorse: selectedHorse !== null,
+              hasBet: selectedBet !== null,
+              hasBaseFee: !!baseFee,
+              notPending: !isWritePending,
+              notRacing: !isRacing
+            })
+          }
+        }}
+        disabled={!canRace}
+        style={{ opacity: !canRace ? 0.5 : 1, touchAction: 'manipulation' }}
+      >
         STEP 2: RACE!
       </button>
 
