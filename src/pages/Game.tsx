@@ -147,6 +147,15 @@ export default function Game() {
     query: { enabled: !!address && selectedBet !== null }
   })
 
+  // Read user's lottery tickets
+  const { data: userTickets, refetch: refetchTickets } = useReadContract({
+    address: PIXEL_PONY_ADDRESS,
+    abi: PIXEL_PONY_ABI,
+    functionName: 'getUserTickets',
+    args: address ? [address] : undefined,
+    query: { enabled: !!address }
+  })
+
   // Check if approved whenever allowance or selectedBet changes
   useEffect(() => {
     if (allowance && selectedBet) {
@@ -566,6 +575,7 @@ export default function Game() {
     refetchJackpot()
     refetchPonyBalance()
     refetchEthBalance()
+    refetchTickets()
   }
 
   const canApprove = selectedHorse !== null && selectedBet !== null && address && !isApproved && !isRacing
@@ -607,6 +617,17 @@ export default function Game() {
         <div className="jackpot-amount">{jackpotDisplay}</div>
         <div style={{ fontSize: '8px', marginTop: '5px' }}>PONY</div>
       </div>
+
+      {/* Lottery Tickets Display */}
+      {address && (
+        <div className="jackpot-display" style={{ marginTop: '16px', background: '#ffeb3b', border: '2px solid #fbc02d' }}>
+          <div className="jackpot-label" style={{ color: '#333' }}>YOUR LOTTERY TICKETS</div>
+          <div className="jackpot-amount" style={{ color: '#333' }}>
+            {userTickets && Array.isArray(userTickets) ? userTickets.length : 0}
+          </div>
+          <div style={{ fontSize: '7px', marginTop: '5px', color: '#666' }}>Earn 1 ticket per race!</div>
+        </div>
+      )}
 
       {/* Status Message */}
       <div className="status-message">{statusMessage}</div>
