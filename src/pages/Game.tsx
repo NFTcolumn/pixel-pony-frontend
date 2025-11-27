@@ -3,6 +3,7 @@ import { useAccount, useReadContract, useWriteContract, useWaitForTransactionRec
 import { parseEther, formatEther } from 'viem'
 import '../Game.css'
 import PIXEL_PONY_ABI_FULL from '../PixelPonyABI.json'
+import ReferralHandler from '../components/ReferralHandler'
 
 // Contract addresses
 const PIXEL_PONY_ADDRESS = '0x2B4652Bd6149E407E3F57190E25cdBa1FC9d37d8'
@@ -615,6 +616,9 @@ export default function Game() {
 
   return (
     <div className="container">
+      {/* Referral Handler - invisible component that handles ref links */}
+      <ReferralHandler />
+
       {/* Header */}
       <div className="header">
         <img src="/logo.png" alt="Pixel Ponies Logo" />

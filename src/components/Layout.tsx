@@ -96,6 +96,7 @@ export default function Layout() {
               <a href="https://basescan.org/address/0x6ab297799335E7b0f60d9e05439Df156cf694Ba7" target="_blank" rel="noopener noreferrer">PONY Token</a>
               <a href="https://basescan.org/address/0x2B4652Bd6149E407E3F57190E25cdBa1FC9d37d8" target="_blank" rel="noopener noreferrer">Game Contract</a>
               <a href="https://basescan.org/address/0x149c79eb6384cd54fb0f34358a7c65cdae8fb9d1" target="_blank" rel="noopener noreferrer">Vault</a>
+              <a href="https://basescan.org/address/0x6a001b4D16580e955cdC8e1c4060C348Cf3fe487" target="_blank" rel="noopener noreferrer">Referral Contract</a>
             </div>
           </div>
         </div>

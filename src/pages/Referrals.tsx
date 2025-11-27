@@ -4,7 +4,7 @@ import { formatEther, isAddress } from 'viem'
 import { useSearchParams } from 'react-router-dom'
 import './Referrals.css'
 
-const REFERRAL_ADDRESS = '0x82249d29af7d7b1F20A63D7aa1248A40c58848e8'
+const REFERRAL_ADDRESS = '0x6a001b4D16580e955cdC8e1c4060C348Cf3fe487'
 
 const REFERRAL_ABI = [
   {
@@ -16,32 +16,8 @@ const REFERRAL_ABI = [
   },
   {
     inputs: [{ name: 'player', type: 'address' }],
-    name: 'referrerOf',
-    outputs: [{ name: '', type: 'address' }],
-    stateMutability: 'view',
-    type: 'function'
-  },
-  {
-    inputs: [{ name: 'player', type: 'address' }],
     name: 'hasReferrer',
     outputs: [{ name: '', type: 'bool' }],
-    stateMutability: 'view',
-    type: 'function'
-  },
-  {
-    inputs: [{ name: 'referrer', type: 'address' }],
-    name: 'pendingRewards',
-    outputs: [{ name: '', type: 'uint256' }],
-    stateMutability: 'view',
-    type: 'function'
-  },
-  {
-    inputs: [{ name: 'referrer', type: 'address' }],
-    name: 'getReferrerInfo',
-    outputs: [
-      { name: 'pending', type: 'uint256' },
-      { name: 'canClaim', type: 'bool' }
-    ],
     stateMutability: 'view',
     type: 'function'
   },
@@ -60,14 +36,68 @@ const REFERRAL_ABI = [
     type: 'function'
   },
   {
+    inputs: [{ name: '_referrer', type: 'address' }],
+    name: 'getReferrerStats',
+    outputs: [
+      { name: 'totalReferredRaces', type: 'uint256' },
+      { name: 'pendingRewards', type: 'uint256' },
+      { name: 'unpaidDirectRacesCount', type: 'uint256' },
+      { name: 'unpaidSubRacesCount', type: 'uint256' },
+      { name: 'totalEarned', type: 'uint256' },
+      { name: 'totalClaimed', type: 'uint256' },
+      { name: 'referredBy', type: 'address' },
+      { name: 'currentCommissionBP', type: 'uint256' },
+      { name: 'canClaim', type: 'bool' }
+    ],
+    stateMutability: 'view',
+    type: 'function'
+  },
+  {
+    inputs: [{ name: '_referrer', type: 'address' }],
+    name: 'getNextTierInfo',
+    outputs: [
+      { name: 'currentTier', type: 'uint256' },
+      { name: 'currentCommissionBP', type: 'uint256' },
+      { name: 'racesUntilNextTier', type: 'uint256' },
+      { name: 'nextCommissionBP', type: 'uint256' }
+    ],
+    stateMutability: 'view',
+    type: 'function'
+  },
+  {
+    inputs: [{ name: '_referrer', type: 'address' }],
+    name: 'getCommissionRate',
+    outputs: [
+      { name: 'basisPoints', type: 'uint256' },
+      { name: 'percentage', type: 'uint256' }
+    ],
+    stateMutability: 'view',
+    type: 'function'
+  },
+  {
     inputs: [],
-    name: 'getStats',
+    name: 'getGlobalStats',
     outputs: [
       { name: '_totalRewardsFunded', type: 'uint256' },
       { name: '_totalRewardsClaimed', type: 'uint256' },
       { name: '_totalReferrers', type: 'uint256' },
+      { name: '_lastProcessedRaceId', type: 'uint256' },
       { name: '_contractBalance', type: 'uint256' }
     ],
+    stateMutability: 'view',
+    type: 'function'
+  },
+  {
+    inputs: [{ name: '_referrer', type: 'address' }],
+    name: 'getReferredPlayerCount',
+    outputs: [{ name: '', type: 'uint256' }],
+    stateMutability: 'view',
+    type: 'function'
+  },
+  {
+    inputs: [{ name: '_referrer', type: 'address' }],
+    name: 'calculateUnpaidRewards',
+    outputs: [{ name: '', type: 'uint256' }],
     stateMutability: 'view',
     type: 'function'
   }
@@ -92,10 +122,34 @@ export default function Referrals() {
     query: { enabled: !!address }
   })
 
-  const { data: referrerInfoData, refetch: refetchReferrerInfo } = useReadContract({
+  const { data: referrerStatsData, refetch: refetchReferrerStats } = useReadContract({
     address: REFERRAL_ADDRESS,
     abi: REFERRAL_ABI,
-    functionName: 'getReferrerInfo',
+    functionName: 'getReferrerStats',
+    args: address ? [address] : undefined,
+    query: { enabled: !!address }
+  })
+
+  const { data: tierInfoData } = useReadContract({
+    address: REFERRAL_ADDRESS,
+    abi: REFERRAL_ABI,
+    functionName: 'getNextTierInfo',
+    args: address ? [address] : undefined,
+    query: { enabled: !!address }
+  })
+
+  const { data: commissionRateData } = useReadContract({
+    address: REFERRAL_ADDRESS,
+    abi: REFERRAL_ABI,
+    functionName: 'getCommissionRate',
+    args: address ? [address] : undefined,
+    query: { enabled: !!address }
+  })
+
+  const { data: playerCountData } = useReadContract({
+    address: REFERRAL_ADDRESS,
+    abi: REFERRAL_ABI,
+    functionName: 'getReferredPlayerCount',
     args: address ? [address] : undefined,
     query: { enabled: !!address }
   })
@@ -103,13 +157,21 @@ export default function Referrals() {
   const { data: globalStatsData } = useReadContract({
     address: REFERRAL_ADDRESS,
     abi: REFERRAL_ABI,
-    functionName: 'getStats'
+    functionName: 'getGlobalStats'
   })
 
   const { data: minClaimAmountData } = useReadContract({
     address: REFERRAL_ADDRESS,
     abi: REFERRAL_ABI,
     functionName: 'minClaimAmount'
+  })
+
+  const { data: unpaidRewardsData } = useReadContract({
+    address: REFERRAL_ADDRESS,
+    abi: REFERRAL_ABI,
+    functionName: 'calculateUnpaidRewards',
+    args: address ? [address] : undefined,
+    query: { enabled: !!address }
   })
 
   // Generate referral link
@@ -167,10 +229,10 @@ export default function Referrals() {
     if (isConfirmed) {
       setStatusMessage('Referrer set successfully!')
       refetchHasReferrer()
-      refetchReferrerInfo()
+      refetchReferrerStats()
       setTimeout(() => setStatusMessage(''), 3000)
     }
-  }, [isConfirmed, refetchHasReferrer, refetchReferrerInfo])
+  }, [isConfirmed, refetchHasReferrer, refetchReferrerStats])
 
   const copyReferralLink = () => {
     navigator.clipboard.writeText(referralLink)
@@ -193,38 +255,72 @@ export default function Referrals() {
     }
   }
 
-  // Parse contract data
-  const pendingRewards = referrerInfoData && Array.isArray(referrerInfoData)
-    ? parseFloat(formatEther(referrerInfoData[0])).toFixed(5)
+  // Parse referrer stats data
+  const totalReferredRaces = referrerStatsData && Array.isArray(referrerStatsData) ? Number(referrerStatsData[0]) : 0
+  const pendingRewards = referrerStatsData && Array.isArray(referrerStatsData)
+    ? parseFloat(formatEther(referrerStatsData[1])).toFixed(5)
+    : '0.00000'
+  const unpaidDirectRaces = referrerStatsData && Array.isArray(referrerStatsData) ? Number(referrerStatsData[2]) : 0
+  const unpaidSubRaces = referrerStatsData && Array.isArray(referrerStatsData) ? Number(referrerStatsData[3]) : 0
+  const totalEarned = referrerStatsData && Array.isArray(referrerStatsData)
+    ? parseFloat(formatEther(referrerStatsData[4])).toFixed(5)
+    : '0.00000'
+  const totalClaimed = referrerStatsData && Array.isArray(referrerStatsData)
+    ? parseFloat(formatEther(referrerStatsData[5])).toFixed(5)
+    : '0.00000'
+  const canClaim = referrerStatsData && Array.isArray(referrerStatsData) ? Boolean(referrerStatsData[8]) : false
+
+  // Parse tier info
+  const currentTier = tierInfoData && Array.isArray(tierInfoData) ? Number(tierInfoData[0]) : 0
+  const currentCommissionBP = tierInfoData && Array.isArray(tierInfoData) ? Number(tierInfoData[1]) : 500
+  const racesUntilNextTier = tierInfoData && Array.isArray(tierInfoData) ? Number(tierInfoData[2]) : 0
+  const nextCommissionBP = tierInfoData && Array.isArray(tierInfoData) ? Number(tierInfoData[3]) : 1000
+
+  // Parse commission rate
+  const commissionPercentage = commissionRateData && Array.isArray(commissionRateData)
+    ? Number(commissionRateData[1])
+    : 5
+
+  // Player count
+  const referredPlayerCount = playerCountData ? Number(playerCountData) : 0
+
+  // Min claim amount
+  const minClaimAmount = minClaimAmountData ? parseFloat(formatEther(minClaimAmountData)).toFixed(4) : '0.0005'
+
+  // Unpaid rewards (earned but not yet funded)
+  const unpaidRewards = unpaidRewardsData
+    ? parseFloat(formatEther(unpaidRewardsData)).toFixed(5)
     : '0.00000'
 
-  const canClaim = referrerInfoData && Array.isArray(referrerInfoData)
-    ? referrerInfoData[1]
-    : false
+  // Calculate true total earned (contract's totalEarned + unpaid rewards)
+  const trueTotalEarned = (
+    parseFloat(totalEarned) + parseFloat(unpaidRewards)
+  ).toFixed(5)
 
-  // Calculate approximate stats based on pending rewards
-  // Each race gives 0.00005 ETH, so we can estimate races from rewards
-  const pendingRewardsNum = referrerInfoData && Array.isArray(referrerInfoData)
-    ? parseFloat(formatEther(referrerInfoData[0]))
-    : 0
-
-  const estimatedRaces = Math.floor(pendingRewardsNum / 0.00005)
-
-  const minClaimAmount = minClaimAmountData ? parseFloat(formatEther(minClaimAmountData)).toFixed(4) : '0.0005'
-  const racesNeeded = Math.max(0, 10 - estimatedRaces)
-
-  // Global stats for display
+  // Global stats
   const totalRewardsFunded = globalStatsData && Array.isArray(globalStatsData)
     ? parseFloat(formatEther(globalStatsData[0])).toFixed(4)
     : '0.0000'
-
   const totalRewardsClaimed = globalStatsData && Array.isArray(globalStatsData)
     ? parseFloat(formatEther(globalStatsData[1])).toFixed(4)
     : '0.0000'
-
   const totalReferrers = globalStatsData && Array.isArray(globalStatsData)
     ? Number(globalStatsData[2])
     : 0
+
+  // Tier names for display - Note: Contract currently treats 40+ as 50%
+  const tierNames = ['Bronze (5%)', 'Silver (10%)', 'Gold (20%)', 'Platinum (30%)', 'Ruby (40%)', 'Diamond (50%)']
+
+  // Adjust tier based on actual races since contract groups 40+ together
+  let adjustedTier = currentTier
+  if (currentTier === 4 && totalReferredRaces >= 50) {
+    adjustedTier = 5
+  } else if (currentTier === 4 && totalReferredRaces >= 40) {
+    adjustedTier = 4
+  }
+
+  const currentTierName = tierNames[adjustedTier] || 'Bronze (5%)'
+  const nextTierName = adjustedTier < 5 ? tierNames[adjustedTier + 1] : 'Max Tier'
 
   if (!isConnected) {
     return (
@@ -278,13 +374,29 @@ export default function Referrals() {
         {/* Your Rewards */}
         <section className="rewards-section">
           <h2>💰 YOUR REWARDS</h2>
+
+          {/* Unpaid Rewards (Earned but not funded yet) */}
+          <div className="rewards-card" style={{ marginBottom: '1rem' }}>
+            <p className="rewards-label">💎 UNPAID REWARDS (Earned)</p>
+            <p className="rewards-value">
+              {unpaidRewards} ETH
+            </p>
+            <p className="rewards-info">
+              ⏳ Waiting for contract funding
+            </p>
+          </div>
+
+          {/* Claimable Rewards (Funded and ready to claim) */}
           <div className="rewards-card">
-            <p className="rewards-label">PENDING REWARDS</p>
+            <p className="rewards-label">✅ CLAIMABLE REWARDS (Funded)</p>
             <p className="rewards-value">
               {pendingRewards} ETH
             </p>
             <p className="rewards-info">
-              🏇 Earn 0.00005 ETH per referred race!
+              🏆 Current Commission: {commissionPercentage}% | Tier: {currentTierName}
+            </p>
+            <p className="rewards-info">
+              🏇 Direct Refs: {commissionPercentage}% | Sub-Refs: 5%
             </p>
             <button
               onClick={handleClaim}
@@ -296,7 +408,7 @@ export default function Referrals() {
                 ? 'CLAIMING...'
                 : canClaim
                 ? 'CLAIM REWARDS'
-                : `NEED ${racesNeeded} MORE RACES (MIN: ${minClaimAmount} ETH)`
+                : `NEED MIN ${minClaimAmount} ETH TO CLAIM`
               }
             </button>
           </div>
@@ -305,10 +417,20 @@ export default function Referrals() {
         {/* How It Works */}
         <section className="how-it-works">
           <h2>📋 HOW IT WORKS</h2>
-          <ul>
+          <ul style={{ textAlign: 'center', listStyle: 'none', padding: 0 }}>
             <li>Share your referral link with friends</li>
-            <li>Earn 10% of race fees (0.00005 ETH) per race they play</li>
-            <li>Claim rewards after 10+ referred races (min {minClaimAmount} ETH)</li>
+            <li>🎯 Tiered Commissions (of 0.0005 ETH race fee):
+              <ul style={{ marginTop: '0.5rem', listStyle: 'none', padding: 0 }}>
+                <li>Bronze (0-9 races): 5%</li>
+                <li>Silver (10-19 races): 10%</li>
+                <li>Gold (20-29 races): 20%</li>
+                <li>Platinum (30-39 races): 30%</li>
+                <li>Ruby (40-49 races): 40%</li>
+                <li>Diamond (50+ races): 50%</li>
+              </ul>
+            </li>
+            <li>💎 Multi-Level: Earn 5% on sub-referrals (people your referrals bring)</li>
+            <li>Claim rewards when you reach min {minClaimAmount} ETH</li>
             <li>No limit on referrals - earn forever! 💰</li>
           </ul>
         </section>
@@ -318,12 +440,24 @@ export default function Referrals() {
           <h2>📊 YOUR STATS</h2>
           <div className="stats-grid">
             <div className="stat-box">
-              <p className="stat-box-label">EST. REFERRED RACES</p>
-              <p className="stat-box-value">~{estimatedRaces}</p>
+              <p className="stat-box-label">TOTAL REFERRED RACES</p>
+              <p className="stat-box-value">{totalReferredRaces}</p>
+            </div>
+            <div className="stat-box">
+              <p className="stat-box-label">REFERRED PLAYERS</p>
+              <p className="stat-box-value">{referredPlayerCount}</p>
             </div>
             <div className="stat-box">
               <p className="stat-box-label">PENDING REWARDS</p>
-              <p className="stat-box-value">{pendingRewards} ETH</p>
+              <p className="stat-box-value">{unpaidRewards} ETH</p>
+            </div>
+            <div className="stat-box">
+              <p className="stat-box-label">TOTAL EARNED</p>
+              <p className="stat-box-value">{trueTotalEarned} ETH</p>
+            </div>
+            <div className="stat-box">
+              <p className="stat-box-label">TOTAL CLAIMED</p>
+              <p className="stat-box-value">{totalClaimed} ETH</p>
             </div>
             <div className="stat-box">
               <p className="stat-box-label">CAN CLAIM?</p>
@@ -331,6 +465,60 @@ export default function Referrals() {
             </div>
           </div>
         </section>
+
+        {/* Tier Progress */}
+        <section className="tier-section">
+          <h2>🎖️ TIER PROGRESS</h2>
+          <div className="stats-grid">
+            <div className="stat-box">
+              <p className="stat-box-label">CURRENT TIER</p>
+              <p className="stat-box-value">{currentTierName}</p>
+            </div>
+            <div className="stat-box">
+              <p className="stat-box-label">CURRENT COMMISSION</p>
+              <p className="stat-box-value">{commissionPercentage}%</p>
+            </div>
+            {adjustedTier < 5 && (
+              <>
+                <div className="stat-box">
+                  <p className="stat-box-label">NEXT TIER</p>
+                  <p className="stat-box-value">{nextTierName}</p>
+                </div>
+                <div className="stat-box">
+                  <p className="stat-box-label">RACES UNTIL NEXT</p>
+                  <p className="stat-box-value">
+                    {adjustedTier === 4 ? Math.max(0, 50 - totalReferredRaces) : racesUntilNextTier}
+                  </p>
+                </div>
+              </>
+            )}
+          </div>
+          {adjustedTier === 5 && (
+            <p className="rewards-info" style={{ textAlign: 'center', marginTop: '1rem' }}>
+              🎉 Congratulations! You've reached the maximum tier!
+            </p>
+          )}
+        </section>
+
+        {/* Multi-Level Stats */}
+        {(unpaidDirectRaces > 0 || unpaidSubRaces > 0) && (
+          <section className="multi-level-section">
+            <h2>📈 UNPAID RACES BREAKDOWN</h2>
+            <div className="stats-grid">
+              <div className="stat-box">
+                <p className="stat-box-label">DIRECT REFERRAL RACES</p>
+                <p className="stat-box-value">{unpaidDirectRaces}</p>
+              </div>
+              <div className="stat-box">
+                <p className="stat-box-label">SUB-REFERRAL RACES</p>
+                <p className="stat-box-value">{unpaidSubRaces}</p>
+              </div>
+            </div>
+            <p className="rewards-info" style={{ textAlign: 'center', marginTop: '1rem' }}>
+              💡 These will be paid when the contract is next funded
+            </p>
+          </section>
+        )}
 
         {/* Global Stats */}
         <section className="global-stats">
