@@ -477,10 +477,10 @@ export default function Game() {
         refetchJackpot()
         refetchPonyBalance()
         refetchEthBalance()
+        refetchAllowance()
 
         setIsRacing(false)
         setRaceHash(null)
-        setIsApproved(false)
         resetWrite()
 
         return
@@ -596,6 +596,7 @@ export default function Game() {
     refetchPonyBalance()
     refetchEthBalance()
     refetchTickets()
+    refetchAllowance()
   }
 
   const canApprove = selectedHorse !== null && selectedBet !== null && address && !isApproved && !isRacing
