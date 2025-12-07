@@ -1,6 +1,5 @@
 import { Routes, Route } from 'react-router-dom'
 import Layout from './components/Layout'
-import ChainSelector from './pages/ChainSelector'
 import Home from './pages/Home'
 import Game from './pages/Game'
 import Referrals from './pages/Referrals'
@@ -14,8 +13,7 @@ function App() {
   return (
     <Routes>
       <Route path="/" element={<Layout />}>
-        <Route index element={<ChainSelector />} />
-        <Route path="home" element={<Home />} />
+        <Route index element={<Home />} />
         <Route path="game" element={<Game />} />
         <Route path="referrals" element={<Referrals />} />
         <Route path="story" element={<Story />} />
